@@ -320,7 +320,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh
   <div class="topbar-div"></div>
   <nav class="nav-pills">
     <button class="nav-pill active" data-view="feed" onclick="showView('feed')">ЛЕНТА</button>
-    <button class="nav-pill" data-view="board" onclick="showView('board')">ДОСКА</button>
+    <a class="nav-pill" href="board.html" target="_blank" style="text-decoration:none">ДОСКА</a>
     <button class="nav-pill" data-view="graph" onclick="showView('graph')">ГРАФ</button>
     <button class="nav-pill" data-view="map" onclick="showView('map')">КАРТА</button>
     <button class="nav-pill" data-view="cases" onclick="showView('cases')">КЕЙСЫ</button>
@@ -338,7 +338,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh
       <div class="left-panel">
         <div class="nav-section">
           <div class="nav-item active" onclick="showView('feed')"><span>⬡</span> ЛЕНТА</div>
-          <div class="nav-item" onclick="showView('board')"><span>◎</span> ДОСКА</div>
+          <div class="nav-item" onclick="window.open('board.html','_blank')"><span>◎</span> ДОСКА</div>
           <div class="nav-item" onclick="showView('graph')"><span>⬡</span> ГРАФ</div>
           <div class="nav-item" onclick="showView('map')"><span>◈</span> КАРТА</div>
           <div class="nav-item" onclick="showView('cases')"><span>⬡</span> КЕЙСЫ</div>
@@ -561,7 +561,7 @@ function openPanel(id,e){e&&e.stopPropagation&&e.stopPropagation();const s=signa
 <div><div class="rp-section">Цепочка доказательств</div>${s.chain.map(c=>`<div class="chain-item"><span class="chain-icon">${c.i}</span><div class="chain-text"><strong>${c.t}</strong><br>${c.n}</div></div>`).join('')}</div>
 <div><div class="rp-section">Источники (${s.sources.length})</div>${s.sources.map(x=>`<div class="source-item"><div class="source-dot" style="background:var(--${x.d})"></div><span class="source-name">${x.n}</span><span class="source-time">${x.t} назад</span></div>`).join('')}</div>
 <div><div class="rp-section">Геометка</div><div class="mini-map">⌖ ${s.geo}</div></div>
-<div><button class="rp-btn rp-btn-p" onclick="showView('board')">ОТКРЫТЬ НА ДОСКЕ</button><button class="rp-btn rp-btn-g" onclick="FEED.makeCase(${s.id})">ЗАВЕСТИ ДЕЛО</button></div>`;}
+<div><a class="rp-btn rp-btn-p" href="board.html?signal=${s.id}" target="_blank" style="display:block;text-decoration:none">ОТКРЫТЬ НА ДОСКЕ</a><button class="rp-btn rp-btn-g" onclick="FEED.makeCase(${s.id})">ЗАВЕСТИ ДЕЛО</button></div>`;}
 window.FEED={openPanel,makeCase:(id,e)=>{e&&e.stopPropagation&&e.stopPropagation();toast('Дело заведено по сигналу #'+id,'green','КЕЙС СОЗДАН');},search:v=>{q=v.toLowerCase();if(document.getElementById('view-feed').classList.contains('hidden'))showView('feed');render();},sort:v=>{sortBy=v;render();},setPeriod:b=>{document.querySelectorAll('#view-feed .period-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');render();},applyFilters:()=>{srcF=[...document.querySelectorAll('#view-feed [data-f=src]:checked')].map(x=>x.value);lvlF=[...document.querySelectorAll('#view-feed [data-f=level]:checked')].map(x=>x.value);render();}};
 render();
 })();
