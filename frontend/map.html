@@ -209,8 +209,8 @@ function initGlobe() {
     document.getElementById('loadingEl').style.display = 'none';
 
     const ctrl = globe.controls();
-    ctrl.autoRotate      = true;
-    ctrl.autoRotateSpeed = 0.45;
+    ctrl.autoRotate      = false;   // off until camera settles
+    ctrl.autoRotateSpeed = 0.35;
     ctrl.enableDamping   = true;
     ctrl.dampingFactor   = 0.08;
     ctrl.minDistance     = 101;
@@ -222,8 +222,11 @@ function initGlobe() {
       rotTimer = setTimeout(() => { ctrl.autoRotate = true; }, 4000);
     });
 
-    globe.pointOfView({lat:48, lng:66, altitude:2.2}, 0);
+    globe.pointOfView({lat:48, lng:66, altitude:1.9}, 0);
     setTab('regions', document.getElementById('tab-regions'));
+
+    // enable rotation only after camera has snapped to Kazakhstan
+    setTimeout(() => { ctrl.autoRotate = true; }, 800);
   });
 }
 
@@ -268,16 +271,16 @@ function showRegions() {
     .ringColor(() => t => `rgba(248,81,73,${(1-t)*0.5})`)
     .ringMaxRadius('maxR').ringPropagationSpeed('speed').ringRepeatPeriod('period')
     .pointsData(KZ_REGIONS)
-    .pointLat('lat').pointLng('lng')
-    .pointAltitude(d => 0.005 + d.signals/360)
-    .pointRadius(d => 0.38 + d.signals/95)
+    .pointLat(d => d.lat).pointLng(d => d.lng)
+    .pointAltitude(0.006)
+    .pointRadius(d => 2.2 + d.signals/16)
     .pointColor(d => RC[d.risk])
-    .pointResolution(14)
+    .pointResolution(20)
     .labelsData(KZ_REGIONS.filter(r=>r.signals>=5))
-    .labelLat('lat').labelLng('lng').labelText('name')
-    .labelSize(d => 0.38 + d.signals/190)
-    .labelColor(d => RC[d.risk]+'DD')
-    .labelAltitude(d => 0.015 + d.signals/360)
+    .labelLat(d => d.lat).labelLng(d => d.lng).labelText('name')
+    .labelSize(d => 0.42 + d.signals/150)
+    .labelColor(d => RC[d.risk]+'EE')
+    .labelAltitude(0.012)
     .onPointClick(d => panel('◎ Регион РК', d.name, RC[d.risk], d.desc,
       [{val:d.signals,lbl:'СИГНАЛЫ'},{val:d.cases,lbl:'КЕЙСЫ'}],
       `Уровень риска: <b style="color:${RC[d.risk]}">${RL[d.risk]}</b>`))
@@ -286,7 +289,7 @@ function showRegions() {
       d?[`Сигналов: <b>${d.signals}</b>`,`Кейсов: <b>${d.cases}</b>`,`Риск: <b style="color:${RC[d.risk]}">${RL[d.risk]}</b>`]:[]
     ));
 
-  globe.pointOfView({lat:48, lng:66, altitude:2.2}, 1000);
+  globe.pointOfView({lat:48, lng:66, altitude:1.9}, 1000);
 }
 
 /* ─── ЮРИСДИКЦИИ ─── */
@@ -307,15 +310,15 @@ function showJurisdictions() {
     .ringColor(() => t => `rgba(248,81,73,${(1-t)*0.45})`)
     .ringMaxRadius('maxR').ringPropagationSpeed('speed').ringRepeatPeriod('period')
     .pointsData([...JURISDICTIONS, ...kzBase])
-    .pointLat('lat').pointLng('lng')
-    .pointAltitude(d => d.isKz ? 0.004 : 0.006 + (d.cases||0)/85)
-    .pointRadius(d => d.isKz ? 0.28 : 0.55 + (d.cases||0)/32)
+    .pointLat(d => d.lat).pointLng(d => d.lng)
+    .pointAltitude(0.005)
+    .pointRadius(d => d.isKz ? 1.8 : 4.0 + (d.cases||0)/5)
     .pointColor(d => d.isKz ? '#2F81F7' : RC[d.risk])
-    .pointResolution(14)
+    .pointResolution(20)
     .labelsData(JURISDICTIONS)
-    .labelLat('lat').labelLng('lng').labelText('city')
-    .labelSize(0.42).labelColor(d => RC[d.risk]+'CC')
-    .labelAltitude(d => 0.016 + d.cases/85)
+    .labelLat(d => d.lat).labelLng(d => d.lng).labelText('city')
+    .labelSize(0.5).labelColor(d => RC[d.risk]+'DD')
+    .labelAltitude(0.012)
     .onPointClick(d => {
       if (d.isKz) return;
       panel('⬡ Юрисдикция', `${d.name} · ${d.city}`, RC[d.risk], d.desc,
@@ -339,23 +342,23 @@ function showFlows() {
   FLOWS.forEach(f => {
     [[f.sLat,f.sLng,'#58A6FF'],[f.eLat,f.eLng,f.color]].forEach(([lat,lng,color])=>{
       const key = `${lat.toFixed(1)},${lng.toFixed(1)}`;
-      if (!seen.has(key)){ seen.add(key); pts.push({lat,lng,color,r:0.38,alt:0.005}); }
+      if (!seen.has(key)){ seen.add(key); pts.push({lat,lng,color,r:1.2,alt:0.005}); }
     });
   });
 
   globe
     .ringsData([])
     .pointsData(pts)
-    .pointLat('lat').pointLng('lng')
-    .pointAltitude('alt').pointRadius('r').pointColor('color').pointResolution(12)
+    .pointLat(d => d.lat).pointLng(d => d.lng)
+    .pointAltitude(d => d.alt).pointRadius(d => d.r).pointColor(d => d.color).pointResolution(16)
     .labelsData([])
     .arcsData(FLOWS)
-    .arcStartLat('sLat').arcStartLng('sLng')
-    .arcEndLat('eLat').arcEndLng('eLng')
-    .arcColor('color')
+    .arcStartLat(d => d.sLat).arcStartLng(d => d.sLng)
+    .arcEndLat(d => d.eLat).arcEndLng(d => d.eLng)
+    .arcColor(d => d.color)
     .arcDashLength(0.38).arcDashGap(0.15)
     .arcDashAnimateTime(2500)
-    .arcStroke(1.4).arcAltitude('alt')
+    .arcStroke(1.6).arcAltitude(d => d.alt)
     .onArcClick(d => panel('↗ Поток', d.label, d.color, d.detail,
       [{val:d.amount,lbl:'ОБЪЁМ'},{val:d.type.toUpperCase(),lbl:'ТИП'}], ''))
     .onArcHover(d => {
