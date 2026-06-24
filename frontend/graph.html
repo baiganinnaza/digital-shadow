@@ -4,347 +4,749 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SIMPLEX — Граф</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#07090E;--bg-panel:#0B0E16;--bg-card:#0F1420;
-  --cyan:#00E5FF;--red:#FF3040;--amber:#FF9200;--green:#00CC7A;
-  --purple:#9B6DFF;--blue:#2979FF;
-  --text:#E2E8F0;--text-mid:#8899AA;--text-dim:#374151;
-  --border:rgba(255,255,255,.065);--border-mid:rgba(255,255,255,.13);
-  --mono:'JetBrains Mono',monospace;--display:'Space Grotesk',sans-serif
+  --bg:#0D1117;--bg-panel:#161B22;--bg-card:#1C2128;
+  --cyan:#2F81F7;--cyan-b:#58A6FF;
+  --red:#F85149;--amber:#D29922;--green:#3FB950;--purple:#BC8CFF;
+  --text:#E6EDF3;--text-mid:#8B949E;--text-dim:#484F58;
+  --border:#30363D;--border-mid:#6E7681;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;--display:'Space Grotesk',sans-serif
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:var(--mono);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
 /* TOPBAR */
 .topbar{height:44px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:0;flex-shrink:0}
-.logo{font-family:var(--display);font-size:14px;font-weight:700;color:var(--text);letter-spacing:2px;padding-right:16px}
+.logo{font-family:var(--display);font-size:13px;font-weight:700;color:var(--text);letter-spacing:.12em;margin-right:4px}
+.logo-dot{color:var(--cyan-b)}
 .topbar-div{width:1px;height:20px;background:var(--border);margin:0 14px;flex-shrink:0}
-.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.live-label{font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1.2px;margin-left:5px}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2.4s ease-in-out infinite;margin-right:5px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.15}}
+.live-label{font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1.5px}
 .nav-pills{display:flex;gap:0;margin-left:14px}
 .nav-pill{font-family:var(--mono);font-size:10px;padding:0 13px;height:44px;line-height:44px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-dim);cursor:pointer;text-decoration:none;transition:color .15s,border-color .15s;letter-spacing:.8px;display:inline-flex;align-items:center}
 .nav-pill:hover{color:var(--text-mid)}
-.nav-pill.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+.nav-pill.active{color:var(--cyan-b);border-bottom-color:var(--cyan-b)}
 .topbar-right{margin-left:auto;display:flex;align-items:center;gap:5px}
-.tool-btn{font-family:var(--mono);font-size:9px;padding:4px 10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.tool-btn{font-family:var(--mono);font-size:9px;padding:4px 10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);border-radius:2px;cursor:pointer;transition:all .15s;letter-spacing:.5px;white-space:nowrap}
 .tool-btn:hover{border-color:var(--border-mid);color:var(--text-mid)}
-.tool-btn.active{border-color:rgba(0,229,255,.3);color:var(--cyan);background:rgba(0,229,255,.06)}
-.avatar{width:28px;height:28px;border-radius:50%;background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--cyan);margin-left:8px}
+.tool-btn.active{border-color:rgba(47,129,247,.4);color:var(--cyan-b);background:rgba(47,129,247,.07)}
+.avatar{width:28px;height:28px;border-radius:2px;background:rgba(47,129,247,.07);border:1px solid rgba(47,129,247,.2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--cyan-b);margin-left:8px}
+
+/* MAIN */
 .main{display:flex;flex:1;overflow:hidden}
-.graph-wrap{flex:1;position:relative;overflow:hidden}
-.graph-canvas{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.035) 1px,transparent 1px);background-size:30px 30px}
+.graph-wrap{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+
+/* canvas bg grid */
+.graph-bg{position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+#gCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab}
+
 /* TOOLTIP */
-.tooltip{
-  position:fixed;background:var(--bg-panel);border:1px solid var(--border-mid);
-  border-radius:3px;padding:9px 12px;font-family:var(--mono);font-size:10px;
-  color:var(--text);pointer-events:none;z-index:50;min-width:150px;
-  box-shadow:0 4px 16px rgba(0,0,0,.6);display:none;
-}
-.tooltip-title{font-size:11px;font-weight:500;margin-bottom:4px}
-.tooltip-row{font-size:9px;color:var(--text-mid);margin-top:2px}
-.tooltip-row span{color:var(--text)}
+.tooltip{position:fixed;background:var(--bg-panel);border:1px solid var(--border-mid);border-radius:3px;padding:9px 12px;font-family:var(--mono);font-size:10px;color:var(--text);pointer-events:none;z-index:60;min-width:160px;box-shadow:0 4px 20px rgba(0,0,0,.7);display:none}
+.tt-title{font-family:var(--sans);font-size:11px;font-weight:600;margin-bottom:4px}
+.tt-row{font-size:9px;color:var(--text-mid);margin-top:2px}
+.tt-row b{color:var(--text)}
+
 /* RIGHT PANEL */
 .rp{width:0;flex-shrink:0;background:var(--bg-panel);border-left:1px solid var(--border);overflow:hidden;transition:width .22s ease}
 .rp.open{width:310px}
 .rp-inner{width:310px;padding:15px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;height:100%}
-.rp-inner::-webkit-scrollbar{width:3px}.rp-inner::-webkit-scrollbar-thumb{background:rgba(255,255,255,.07)}
-.panel-close{background:none;border:1px solid var(--border);color:var(--text-dim);width:22px;height:22px;border-radius:2px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;align-self:flex-end}
-.panel-close:hover{border-color:rgba(255,48,64,.3);color:var(--red)}
-.rp-title{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
-.rp-sub{font-size:10px;color:var(--text-dim);margin-top:2px}
-.rp-section{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.rp-inner::-webkit-scrollbar{width:3px}.rp-inner::-webkit-scrollbar-thumb{background:var(--border)}
+.panel-close{background:none;border:1px solid var(--border);color:var(--text-dim);width:22px;height:22px;border-radius:2px;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .15s;align-self:flex-end;font-family:var(--mono)}
+.panel-close:hover{border-color:rgba(248,81,73,.35);color:var(--red)}
+.rp-type{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:3px}
+.rp-name{font-family:var(--display);font-size:15px;font-weight:600;color:var(--text)}
+.rp-sub{font-family:var(--sans);font-size:11px;color:var(--text-mid);margin-top:2px}
+.rp-section{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border)}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:2px;padding:10px;text-align:center}
-.stat-val{font-family:var(--mono);font-size:17px;font-weight:700;margin-bottom:2px}
-.stat-label{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.5px}
-.nbtn{width:100%;font-family:var(--mono);font-size:9px;letter-spacing:.8px;padding:7px;border-radius:2px;cursor:pointer;transition:all .15s;text-transform:uppercase;text-align:center;border:1px solid;margin-top:3px}
-.nbtn-p{background:rgba(0,229,255,.07);color:var(--cyan);border-color:rgba(0,229,255,.25)}
-.nbtn-p:hover{background:rgba(0,229,255,.13)}
-.nbtn-g{background:transparent;color:var(--text-dim);border-color:var(--border)}
-.nbtn-g:hover{color:var(--text-mid);border-color:var(--border-mid)}
+.stat-val{font-family:var(--mono);font-size:18px;font-weight:700;margin-bottom:2px}
+.stat-lbl{font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:.5px}
+.conn-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.conn-item:last-child{border-bottom:none}
+.conn-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.conn-name{font-family:var(--mono);font-size:10px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conn-lbl{font-family:var(--mono);font-size:9px;color:var(--text-dim);flex-shrink:0}
+.rp-btn{width:100%;font-family:var(--mono);font-size:9px;letter-spacing:.8px;padding:8px;border-radius:2px;cursor:pointer;transition:all .15s;text-transform:uppercase;text-align:center;border:1px solid;margin-top:4px;display:block;text-decoration:none}
+.rp-btn-p{background:rgba(47,129,247,.07);color:var(--cyan-b);border-color:rgba(47,129,247,.25)}
+.rp-btn-p:hover{background:rgba(47,129,247,.13)}
+.rp-btn-g{background:transparent;color:var(--text-dim);border-color:var(--border)}
+.rp-btn-g:hover{color:var(--text-mid);border-color:var(--border-mid)}
+
 /* BOTTOM BAR */
 .bottom-bar{height:32px;background:var(--bg-panel);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:0;flex-shrink:0}
 .bstat{font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:0 14px;border-right:1px solid var(--border)}
 .bstat:first-child{padding-left:0}
-.bstat b{color:var(--cyan)}
-.legend{display:flex;margin-left:auto}
+.bstat b{color:var(--cyan-b)}
+.legend{display:flex;margin-left:auto;gap:0}
 .leg-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:0 12px;border-right:1px solid var(--border)}
 .leg-item:last-child{border-right:none;padding-right:0}
-.leg-circle{width:8px;height:8px;border-radius:50%}
-::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
+.leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 </style>
 </head>
 <body>
+
 <div class="topbar">
-  <div class="logo">SIMPLEX</div>
+  <div class="logo">SIMPLEX<span class="logo-dot">.</span></div>
   <div class="topbar-div"></div>
   <div class="live-dot"></div>
   <span class="live-label">LIVE</span>
   <div class="topbar-div"></div>
   <nav class="nav-pills">
     <a class="nav-pill" href="index.html">ЛЕНТА</a>
-    <a class="nav-pill" href="board.html">ДОСКА</a>
+    <a class="nav-pill" href="board.html" target="_blank">ДОСКА</a>
     <a class="nav-pill active" href="#">ГРАФ</a>
     <a class="nav-pill" href="map.html">КАРТА</a>
     <a class="nav-pill" href="cases.html">КЕЙСЫ</a>
   </nav>
   <div class="topbar-right">
-    <button class="tool-btn active" onclick="filterType('all',this)">ВСЕ</button>
-    <button class="tool-btn" onclick="filterType('person',this)">◉ ЛИЦА</button>
-    <button class="tool-btn" onclick="filterType('darknet',this)">⬢ DARKNET</button>
-    <button class="tool-btn" onclick="relayout()">⊞ ПЕРЕСТРОИТЬ</button>
+    <button class="tool-btn active" id="fAll"   onclick="setFilter('all',this)">ВСЕ</button>
+    <button class="tool-btn"        id="fPerson" onclick="setFilter('person',this)">◉ ЛИЦА</button>
+    <button class="tool-btn"        id="fDark"   onclick="setFilter('darknet',this)">⬢ DARKNET</button>
+    <button class="tool-btn"        id="fWallet" onclick="setFilter('wallet',this)">◈ КРИПТО</button>
+    <button class="tool-btn"        onclick="relayout()">⊞ СБРОС</button>
     <div class="avatar">АН</div>
   </div>
 </div>
+
 <div class="main">
-  <div class="graph-wrap">
-    <div class="graph-canvas"></div>
-    <canvas id="graphCanvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+  <div class="graph-wrap" id="graphWrap">
+    <div class="graph-bg"></div>
+    <canvas id="gCanvas"></canvas>
   </div>
-  <div class="rp" id="rp"><div class="rp-inner" id="rpInner"></div></div>
+  <div class="rp" id="rp">
+    <div class="rp-inner" id="rpInner"></div>
+  </div>
 </div>
+
 <div class="bottom-bar">
-  <span class="bstat"><b>12</b> узлов</span>
-  <span class="bstat"><b>12</b> связей</span>
-  <span class="bstat"><b>3</b> кластера</span>
+  <span class="bstat" id="bNodes"><b>38</b> узлов</span>
+  <span class="bstat" id="bEdges"><b>53</b> связей</span>
+  <span class="bstat" id="bClusters"><b>5</b> кластеров</span>
   <div class="legend">
-    <div class="leg-item"><div class="leg-circle" style="background:var(--red)"></div> КРИТИЧ.</div>
-    <div class="leg-item"><div class="leg-circle" style="background:var(--amber)"></div> СРЕДН.</div>
-    <div class="leg-item"><div class="leg-circle" style="background:var(--green)"></div> НИЗКИЙ</div>
-    <div class="leg-item"><div class="leg-circle" style="background:var(--purple);opacity:.7"></div> DARKNET</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#FF4A4A"></div> Алматы</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#FF9200"></div> Шымкент</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#CC44FF"></div> DarkNet</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#00D4FF"></div> Крипто</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#3FB950"></div> Периферия</div>
   </div>
 </div>
+
 <div class="tooltip" id="tooltip"></div>
+
 <script>
-const W=()=>document.querySelector('.graph-wrap').offsetWidth;
-const H=()=>document.querySelector('.graph-wrap').offsetHeight;
-const canvas=document.getElementById('graphCanvas');
-const ctx=canvas.getContext('2d');
+/* ═══════════════ DATA ═══════════════ */
 
-const NODES=[
-  {id:'n1',label:'phantom_kz',type:'person',risk:87,level:'critical',dark:true,x:0,y:0,vx:0,vy:0},
-  {id:'n2',label:'@kz_drop_alm',type:'telegram',risk:94,level:'critical',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n3',label:'bc1qx7kp',type:'wallet',risk:82,level:'critical',dark:true,x:0,y:0,vx:0,vy:0},
-  {id:'n4',label:'DN-маркет A41',type:'darknet',risk:91,level:'critical',dark:true,x:0,y:0,vx:0,vy:0},
-  {id:'n5',label:'drop_shym_2',type:'person',risk:65,level:'medium',dark:true,x:0,y:0,vx:0,vy:0},
-  {id:'n6',label:'OLX #4821',type:'listing',risk:55,level:'medium',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n7',label:'bc1qm88',type:'wallet',risk:61,level:'medium',dark:true,x:0,y:0,vx:0,vy:0},
-  {id:'n8',label:'@vape_opt_kz',type:'telegram',risk:40,level:'medium',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n9',label:'seller_kz77',type:'person',risk:55,level:'medium',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n10',label:'+7701234...',type:'phone',risk:45,level:'medium',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n11',label:'OLX #7744',type:'listing',risk:22,level:'low',dark:false,x:0,y:0,vx:0,vy:0},
-  {id:'n12',label:'@kz_alco',type:'telegram',risk:38,level:'low',dark:false,x:0,y:0,vx:0,vy:0},
-];
-const EDGES=[
-  {s:'n1',t:'n2',color:'#9B6DFF',label:'ник'},
-  {s:'n1',t:'n3',color:'#00E5FF',label:'кошелёк'},
-  {s:'n2',t:'n3',color:'#00E5FF',label:'кошелёк'},
-  {s:'n3',t:'n4',color:'#9B6DFF',label:'DN-адрес'},
-  {s:'n4',t:'n5',color:'#FF3040',label:'дроп'},
-  {s:'n6',t:'n1',color:'#9B6DFF',label:'ник'},
-  {s:'n7',t:'n3',color:'#00E5FF',label:'цепочка'},
-  {s:'n8',t:'n6',color:'#FF9200',label:'телефон'},
-  {s:'n9',t:'n8',color:'#9B6DFF',label:'ник'},
-  {s:'n10',t:'n9',color:'#FF9200',label:'телефон'},
-  {s:'n11',t:'n9',color:'#9B6DFF',label:'ник'},
-  {s:'n12',t:'n10',color:'#FF9200',label:'телефон'},
+const CLUSTERS = [
+  {id:'almaty',   label:'АЛМАТЫ',   color:'#FF4A4A', fx:0.23, fy:0.50},
+  {id:'shymkent', label:'ШЫМКЕНТ',  color:'#FF9200', fx:0.52, fy:0.67},
+  {id:'darknet',  label:'DARKNET',  color:'#CC44FF', fx:0.67, fy:0.28},
+  {id:'crypto',   label:'КРИПТО',   color:'#00D4FF', fx:0.46, fy:0.20},
+  {id:'periph',   label:'ПЕРИФЕРИЯ',color:'#3FB950', fx:0.80, fy:0.55},
 ];
 
-let scale=1,panX=0,panY=0,isDragging=false,dragNode=null,panStart={x:0,y:0},panOrigin={x:0,y:0},hoveredNode=null,selectedNode=null,filterActive='all',animFrame;
+const SIGNAL_MAP = {
+  almaty:'1', shymkent:'1', darknet:'3', crypto:'4', periph:'5'
+};
 
-function initPositions(){
-  const w=W(),h=H();
-  NODES.forEach((n,i)=>{
-    const angle=(i/NODES.length)*Math.PI*2;
-    const r=Math.min(w,h)*0.32;
-    n.x=w/2+r*Math.cos(angle);
-    n.y=h/2+r*Math.sin(angle);
+const TYPE_ICON = {person:'◉', telegram:'◈', wallet:'◈', darknet:'⬢', listing:'▤', phone:'◎'};
+const TYPE_LABEL = {person:'Подозреваемый', telegram:'Telegram', wallet:'Кошелёк', darknet:'DarkNet', listing:'Объявление', phone:'Телефон'};
+
+const NODES = [
+  /* ── АЛМАТЫ ── */
+  {id:'n1',  label:'phantom_kz',     type:'person',   risk:87, cluster:'almaty',   hub:true,  x:0,y:0,vx:0,vy:0},
+  {id:'n2',  label:'@kz_drop_alm',   type:'telegram', risk:94, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n3',  label:'OLX #4821',      type:'listing',  risk:55, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n4',  label:'seller_kz77',    type:'person',   risk:55, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n5',  label:'OLX #5901',      type:'listing',  risk:55, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n6',  label:'@vape_opt_kz',   type:'telegram', risk:40, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n7',  label:'+77012 345...',  type:'phone',    risk:45, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n8',  label:'Krisha #8821',   type:'listing',  risk:48, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n9',  label:'anon_seller',    type:'person',   risk:40, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n10', label:'OLX #6100',      type:'listing',  risk:38, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n11', label:'+77015 881...',  type:'phone',    risk:32, cluster:'almaty',   hub:false, x:0,y:0,vx:0,vy:0},
+
+  /* ── ШЫМКЕНТ ── */
+  {id:'n12', label:'drop_shym_2',    type:'person',   risk:65, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n13', label:'drop_kzo_1',     type:'person',   risk:52, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n14', label:'@kzo_zakladki',  type:'telegram', risk:55, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n15', label:'OLX #7200',      type:'listing',  risk:42, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n16', label:'+77027 144...',  type:'phone',    risk:38, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n17', label:'anon_kzo',       type:'person',   risk:42, cluster:'shymkent', hub:false, x:0,y:0,vx:0,vy:0},
+
+  /* ── DARKNET ── */
+  {id:'n18', label:'DN-маркет A41',  type:'darknet',  risk:91, cluster:'darknet',  hub:true,  x:0,y:0,vx:0,vy:0},
+  {id:'n19', label:'DN-форум mirror',type:'darknet',  risk:82, cluster:'darknet',  hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n20', label:'DN-листинг 112', type:'darknet',  risk:61, cluster:'darknet',  hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n21', label:'DN-профиль X',   type:'darknet',  risk:58, cluster:'darknet',  hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n22', label:'DN-магазин B7',  type:'darknet',  risk:74, cluster:'darknet',  hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n23', label:'19400 записей',  type:'darknet',  risk:82, cluster:'darknet',  hub:false, x:0,y:0,vx:0,vy:0},
+
+  /* ── КРИПТО ── */
+  {id:'n24', label:'bc1qx7kp...',    type:'wallet',   risk:82, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n25', label:'bc1qm88...',     type:'wallet',   risk:61, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n26', label:'bc1qaa12...',    type:'wallet',   risk:55, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n27', label:'TRX addr1...',   type:'wallet',   risk:44, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n28', label:'USDT pool',      type:'wallet',   risk:70, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n29', label:'bc1qzz99...',    type:'wallet',   risk:38, cluster:'crypto',   hub:false, x:0,y:0,vx:0,vy:0},
+
+  /* ── ПЕРИФЕРИЯ ── */
+  {id:'n30', label:'@kz_alco_opt',   type:'telegram', risk:55, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n31', label:'OLX #6201',      type:'listing',  risk:48, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n32', label:'OLX #7744',      type:'listing',  risk:22, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n33', label:'opt_alco_kz',    type:'person',   risk:38, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n34', label:'+77017 999...',  type:'phone',    risk:35, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n35', label:'Krisha #7100',   type:'listing',  risk:28, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n36', label:'anon_buyer1',    type:'person',   risk:28, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n37', label:'@kz_drugs_ref',  type:'telegram', risk:45, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+  {id:'n38', label:'mule_acc_01',    type:'person',   risk:60, cluster:'periph',   hub:false, x:0,y:0,vx:0,vy:0},
+];
+
+/* edge types: nick=purple, wallet=cyan, darknet=magenta, phone=amber, listing=orange, signal=gray */
+const EC = {nick:'#9B6DFF', wallet:'#00D4FF', darknet:'#CC44FF', phone:'#FF9200', listing:'#FF7030', signal:'#444D58'};
+
+const EDGES = [
+  /* АЛМАТЫ internal */
+  {s:'n1', t:'n2',  c:EC.nick,    lbl:'тот же ник'},
+  {s:'n1', t:'n3',  c:EC.nick,    lbl:'тот же ник'},
+  {s:'n4', t:'n5',  c:EC.listing, lbl:'продавец'},
+  {s:'n4', t:'n6',  c:EC.nick,    lbl:'аккаунт'},
+  {s:'n7', t:'n4',  c:EC.phone,   lbl:'телефон'},
+  {s:'n8', t:'n9',  c:EC.listing, lbl:'владелец'},
+  {s:'n11',t:'n9',  c:EC.phone,   lbl:'телефон'},
+  {s:'n9', t:'n10', c:EC.listing, lbl:'продавец'},
+  {s:'n11',t:'n7',  c:EC.phone,   lbl:'контакты'},
+
+  /* ШЫМКЕНТ internal */
+  {s:'n12',t:'n14', c:EC.nick,    lbl:'упоминание'},
+  {s:'n13',t:'n14', c:EC.nick,    lbl:'участник'},
+  {s:'n15',t:'n17', c:EC.listing, lbl:'продавец'},
+  {s:'n16',t:'n13', c:EC.phone,   lbl:'телефон'},
+  {s:'n12',t:'n13', c:EC.signal,  lbl:'курьеры'},
+
+  /* DARKNET internal */
+  {s:'n18',t:'n19', c:EC.darknet, lbl:'ссылка'},
+  {s:'n18',t:'n20', c:EC.darknet, lbl:'тот же продавец'},
+  {s:'n18',t:'n21', c:EC.darknet, lbl:'профиль'},
+  {s:'n18',t:'n22', c:EC.darknet, lbl:'партнёр'},
+  {s:'n19',t:'n23', c:EC.darknet, lbl:'публикация'},
+  {s:'n22',t:'n21', c:EC.darknet, lbl:'одна сеть'},
+  {s:'n20',t:'n22', c:EC.darknet, lbl:'сеть'},
+
+  /* КРИПТО internal */
+  {s:'n24',t:'n25', c:EC.wallet,  lbl:'цепочка'},
+  {s:'n25',t:'n26', c:EC.wallet,  lbl:'цепочка'},
+  {s:'n26',t:'n27', c:EC.wallet,  lbl:'конвертация'},
+  {s:'n28',t:'n24', c:EC.wallet,  lbl:'вывод'},
+  {s:'n28',t:'n25', c:EC.wallet,  lbl:'вывод'},
+  {s:'n29',t:'n27', c:EC.wallet,  lbl:'вывод'},
+  {s:'n29',t:'n26', c:EC.wallet,  lbl:'цепочка'},
+
+  /* ПЕРИФЕРИЯ internal */
+  {s:'n30',t:'n31', c:EC.listing, lbl:'источник'},
+  {s:'n33',t:'n30', c:EC.nick,    lbl:'аккаунт'},
+  {s:'n34',t:'n33', c:EC.phone,   lbl:'телефон'},
+  {s:'n37',t:'n30', c:EC.nick,    lbl:'смежный канал'},
+  {s:'n35',t:'n36', c:EC.listing, lbl:'объявление'},
+  {s:'n36',t:'n32', c:EC.signal,  lbl:'связь'},
+
+  /* ── CROSS-CLUSTER — ключевые паттерны ── */
+  {s:'n1', t:'n24', c:EC.wallet,  lbl:'кошелёк'},       /* phantom ↔ bc1qx7kp */
+  {s:'n1', t:'n18', c:EC.darknet, lbl:'DN-профиль'},     /* phantom ↔ DN-маркет */
+  {s:'n2', t:'n24', c:EC.wallet,  lbl:'кошелёк'},        /* @kz_drop ↔ bc1qx7kp */
+  {s:'n24',t:'n18', c:EC.darknet, lbl:'DN-адрес'},       /* bc1qx7kp ↔ DN-маркет */
+  {s:'n12',t:'n18', c:EC.darknet, lbl:'прямое упом.'},   /* drop_shym ↔ DN-маркет */
+  {s:'n25',t:'n1',  c:EC.wallet,  lbl:'общая цепочка'},  /* bc1qm88 ↔ phantom */
+  {s:'n22',t:'n12', c:EC.darknet, lbl:'поставщик'},      /* DN-магазин ↔ drop_shym */
+  {s:'n28',t:'n12', c:EC.wallet,  lbl:'выплата'},        /* USDT pool ↔ drop_shym */
+  {s:'n38',t:'n28', c:EC.wallet,  lbl:'отмывание'},      /* mule ↔ USDT */
+  {s:'n38',t:'n1',  c:EC.signal,  lbl:'косвенная'},      /* mule ↔ phantom */
+  {s:'n26',t:'n4',  c:EC.wallet,  lbl:'транзакция'},     /* bc1qaa12 ↔ seller_kz77 */
+  {s:'n21',t:'n4',  c:EC.darknet, lbl:'DN-след'},        /* DN-профиль ↔ seller_kz77 */
+  {s:'n7', t:'n16', c:EC.phone,   lbl:'звонок'},         /* +77012 ↔ +77027 Almaty↔Shym */
+  {s:'n37',t:'n14', c:EC.nick,    lbl:'смежный канал'},  /* @kz_drugs_ref ↔ @kzo_zakladki */
+  {s:'n20',t:'n25', c:EC.wallet,  lbl:'кошелёк в DN'},   /* DN-листинг ↔ bc1qm88 */
+  {s:'n6', t:'n30', c:EC.nick,    lbl:'схожие каналы'},  /* @vape_opt ↔ @kz_alco_opt */
+  {s:'n23',t:'n1',  c:EC.darknet, lbl:'упоминание'},     /* 19400 ↔ phantom */
+];
+
+/* ═══════════════ PHYSICS ═══════════════ */
+
+const REPULSION  = 9000;
+const SPRING_K   = 0.022;
+const REST_LEN   = 110;
+const CL_GRAVITY = 0.007;
+const DAMPING    = 0.78;
+const BROWNIAN   = 0.10;
+const MAX_VEL    = 7;
+
+let clusterCenters = {};
+
+function computeClusterCenters() {
+  const w = gWrap.clientWidth, h = gWrap.clientHeight;
+  CLUSTERS.forEach(c => { clusterCenters[c.id] = {x: w * c.fx, y: h * c.fy}; });
+}
+
+function simulate() {
+  /* repulsion between all node pairs */
+  for (let i = 0; i < NODES.length; i++) {
+    for (let j = i + 1; j < NODES.length; j++) {
+      const a = NODES[i], b = NODES[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d2 = dx*dx + dy*dy + 1;
+      const d  = Math.sqrt(d2);
+      const f  = REPULSION / d2;
+      const fx = dx/d * f, fy = dy/d * f;
+      a.vx -= fx; a.vy -= fy;
+      b.vx += fx; b.vy += fy;
+    }
+  }
+  /* spring attraction along edges */
+  EDGES.forEach(e => {
+    const s = nodeById(e.s), t = nodeById(e.t);
+    if (!s || !t) return;
+    if (filterActive !== 'all' && s.type !== filterActive && t.type !== filterActive) return;
+    const dx = t.x - s.x, dy = t.y - s.y;
+    const d  = Math.max(Math.hypot(dx, dy), 1);
+    const f  = (d - REST_LEN) * SPRING_K;
+    const fx = dx/d * f, fy = dy/d * f;
+    s.vx += fx; s.vy += fy;
+    t.vx -= fx; t.vy -= fy;
+  });
+  /* cluster gravity + Brownian + update */
+  const w = gWrap.clientWidth, h = gWrap.clientHeight;
+  NODES.forEach(n => {
+    const cc = clusterCenters[n.cluster];
+    if (cc) {
+      n.vx += (cc.x - n.x) * CL_GRAVITY;
+      n.vy += (cc.y - n.y) * CL_GRAVITY;
+    }
+    n.vx += (Math.random() - 0.5) * BROWNIAN;
+    n.vy += (Math.random() - 0.5) * BROWNIAN;
+    n.vx *= DAMPING; n.vy *= DAMPING;
+    const spd = Math.hypot(n.vx, n.vy);
+    if (spd > MAX_VEL) { n.vx = n.vx/spd*MAX_VEL; n.vy = n.vy/spd*MAX_VEL; }
+    n.x += n.vx; n.y += n.vy;
+    n.x = Math.max(30, Math.min(w - 30, n.x));
+    n.y = Math.max(30, Math.min(h - 30, n.y));
   });
 }
 
-const nodeColors={critical:'#FF3040',medium:'#FF9200',low:'#00CC7A'};
-const typeEmoji={person:'◉',telegram:'◈',wallet:'◈',darknet:'⬢',listing:'▤',phone:'◎'};
+/* ═══════════════ RENDERING ═══════════════ */
 
-function toScreen(x,y){return{x:x*scale+panX,y:y*scale+panY};}
-function toWorld(x,y){return{x:(x-panX)/scale,y:(y-panY)/scale};}
+const canvas = document.getElementById('gCanvas');
+const ctx    = canvas.getContext('2d');
+const gWrap  = document.getElementById('graphWrap');
 
-function resize(){canvas.width=W();canvas.height=H();}
+let scale = 1, panX = 0, panY = 0;
+let dragNode = null, isPanning = false;
+let panStart = {x:0,y:0}, panOrigin = {x:0,y:0};
+let hoveredNode = null, selectedNode = null, filterActive = 'all';
+let dashOffset = 0, frame = 0;
 
-function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // edges
-  EDGES.forEach(e=>{
-    const s=NODES.find(n=>n.id===e.s),t=NODES.find(n=>n.id===e.t);
-    if(!s||!t)return;
-    if(filterActive!=='all'&&s.type!==filterActive&&t.type!==filterActive)return;
-    const sp=toScreen(s.x,s.y),tp=toScreen(t.x,t.y);
+function W(){ return gWrap.clientWidth; }
+function H(){ return gWrap.clientHeight; }
+function toScreen(x,y){ return {x: x*scale + panX, y: y*scale + panY}; }
+function toWorld(x,y){ return {x: (x-panX)/scale, y: (y-panY)/scale}; }
+function nodeById(id){ return NODES.find(n=>n.id===id); }
+
+function visibleNodes(){ return NODES.filter(n => filterActive==='all' || n.type===filterActive); }
+
+function riskColor(risk){ return risk>=75 ? '#FF4A4A' : risk>=45 ? '#FF9200' : '#3FB950'; }
+
+function nodeRadius(n){ return 6 + (n.risk/100)*13; }
+
+function resize(){
+  canvas.width  = W();
+  canvas.height = H();
+}
+
+/* draw cluster ellipse behind nodes */
+function drawClouds(){
+  CLUSTERS.forEach(cl => {
+    const visible = visibleNodes().filter(n => n.cluster === cl.id);
+    if (visible.length < 2) return;
+    const pts = visible.map(n => toScreen(n.x, n.y));
+    const xs  = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const cx  = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy  = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const rx  = (Math.max(...xs) - Math.min(...xs)) / 2 + 55;
+    const ry  = (Math.max(...ys) - Math.min(...ys)) / 2 + 48;
+
     ctx.save();
-    ctx.strokeStyle=e.color;
-    ctx.globalAlpha=selectedNode&&(e.s===selectedNode||e.t===selectedNode)?0.8:0.3;
-    ctx.lineWidth=selectedNode&&(e.s===selectedNode||e.t===selectedNode)?1.5:1;
-    ctx.setLineDash([5,4]);
     ctx.beginPath();
-    const cx=(sp.x+tp.x)/2,cy=(sp.y+tp.y)/2-30;
-    ctx.moveTo(sp.x,sp.y);ctx.quadraticCurveTo(cx,cy,tp.x,tp.y);
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2);
+    /* inner fill */
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(rx,ry));
+    grad.addColorStop(0, cl.color + '18');
+    grad.addColorStop(1, cl.color + '06');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    /* dashed border */
+    ctx.strokeStyle = cl.color + '40';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 7]);
     ctx.stroke();
-    if(selectedNode&&(e.s===selectedNode||e.t===selectedNode)){
-      ctx.globalAlpha=0.6;ctx.font='8px JetBrains Mono';ctx.fillStyle=e.color;
+    ctx.restore();
+
+    /* cluster label above ellipse */
+    ctx.save();
+    ctx.font = 'bold 9px JetBrains Mono';
+    ctx.fillStyle = cl.color + 'BB';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.letterSpacing = '1.5px';
+    ctx.fillText(cl.label, cx, cy - ry - 6);
+    ctx.restore();
+  });
+}
+
+function drawEdges(){
+  dashOffset = (dashOffset + 0.4) % 20;
+  EDGES.forEach(e => {
+    const s = nodeById(e.s), t = nodeById(e.t);
+    if (!s || !t) return;
+    const sv = visibleNodes();
+    if (!sv.includes(s) && !sv.includes(t)) return;
+    const sp = toScreen(s.x, s.y), tp = toScreen(t.x, t.y);
+
+    const isHighlighted = selectedNode &&
+      (e.s === selectedNode || e.t === selectedNode);
+    const isConnected = selectedNode &&
+      (s.id === selectedNode || t.id === selectedNode);
+
+    ctx.save();
+    ctx.globalAlpha = selectedNode ? (isHighlighted ? 0.85 : 0.07) : 0.28;
+    ctx.strokeStyle = e.c;
+    ctx.lineWidth   = isHighlighted ? 2 : 1;
+
+    /* slight curve */
+    const mx = (sp.x + tp.x) / 2;
+    const my = (sp.y + tp.y) / 2 - 25;
+
+    if (isHighlighted) {
+      ctx.setLineDash([6, 4]);
+      ctx.lineDashOffset = -dashOffset;
+    } else {
+      ctx.setLineDash([3, 5]);
+    }
+    ctx.beginPath();
+    ctx.moveTo(sp.x, sp.y);
+    ctx.quadraticCurveTo(mx, my, tp.x, tp.y);
+    ctx.stroke();
+
+    /* edge label on highlighted */
+    if (isHighlighted && e.lbl) {
+      ctx.globalAlpha = 0.7;
       ctx.setLineDash([]);
-      ctx.fillText(e.label,(sp.x+tp.x)/2,(sp.y+tp.y)/2-18);
+      ctx.font = '8px JetBrains Mono';
+      ctx.fillStyle = e.c;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(e.lbl, (sp.x+tp.x)/2, (sp.y+tp.y)/2 - 14);
     }
     ctx.restore();
   });
-  // nodes
-  NODES.forEach(n=>{
-    if(filterActive!=='all'&&n.type!==filterActive)return;
-    const p=toScreen(n.x,n.y);
-    const r=7+(n.risk/100)*13;
+}
+
+function drawNodes(){
+  const t = Date.now();
+  visibleNodes().forEach(n => {
+    const p  = toScreen(n.x, n.y);
+    const r  = nodeRadius(n) * scale;
+    const rc = riskColor(n.risk);
+    const cl = CLUSTERS.find(c => c.id === n.cluster);
+    const clColor = cl ? cl.color : '#888';
+
+    const isSelected  = n.id === selectedNode;
+    const isHovered   = n.id === hoveredNode;
+    const isNeighbour = selectedNode && EDGES.some(
+      e => (e.s===selectedNode && e.t===n.id) || (e.t===selectedNode && e.s===n.id)
+    );
+    const dimmed = selectedNode && !isSelected && !isNeighbour;
+
     ctx.save();
-    ctx.globalAlpha=selectedNode&&n.id!==selectedNode&&!EDGES.some(e=>e.s===selectedNode&&e.t===n.id||e.t===selectedNode&&e.s===n.id)?0.25:1;
-    // outer ring
-    ctx.beginPath();ctx.arc(p.x,p.y,r+4,0,Math.PI*2);
-    ctx.strokeStyle=n.id===selectedNode?nodeColors[n.level]:n.dark?'rgba(155,109,255,.2)':'rgba(255,255,255,.04)';
-    ctx.lineWidth=n.id===selectedNode?1.5:1;
+    ctx.globalAlpha = dimmed ? 0.15 : 1;
+
+    /* HUB: pulsing outer ring */
+    if (n.hub) {
+      const pulse = 0.5 + 0.5 * Math.sin(t / 900);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 10 + pulse * 6, 0, Math.PI*2);
+      ctx.strokeStyle = rc + '30';
+      ctx.lineWidth   = 1.5;
+      ctx.setLineDash([]);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, r + 5 + pulse * 3, 0, Math.PI*2);
+      ctx.strokeStyle = rc + '55';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+
+    /* critical glow */
+    if (n.risk >= 75 && !dimmed) {
+      ctx.shadowColor = rc;
+      ctx.shadowBlur  = isSelected || isHovered ? 18 : 10;
+    }
+
+    /* outer ring (cluster color for selected, level for hover) */
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r + 3, 0, Math.PI*2);
+    ctx.strokeStyle = isSelected ? clColor : (isHovered ? rc + 'AA' : rc + '25');
+    ctx.lineWidth   = isSelected ? 1.5 : 1;
+    ctx.setLineDash([]);
     ctx.stroke();
-    // fill
-    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);
-    ctx.fillStyle=nodeColors[n.level]+'1A';
+
+    /* fill */
+    ctx.shadowBlur = 0;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+    ctx.fillStyle = rc + '22';
     ctx.fill();
-    ctx.strokeStyle=nodeColors[n.level];
-    ctx.lineWidth=n.id===hoveredNode||n.id===selectedNode?1.5:1;
-    ctx.globalAlpha=(selectedNode&&n.id!==selectedNode&&!EDGES.some(e=>e.s===selectedNode&&e.t===n.id||e.t===selectedNode&&e.s===n.id)?0.25:1)*(n.id===hoveredNode||n.id===selectedNode?1:0.7);
+    ctx.strokeStyle = rc;
+    ctx.lineWidth   = isSelected || isHovered ? 2 : 1.2;
     ctx.stroke();
-    // icon
-    ctx.globalAlpha=selectedNode&&n.id!==selectedNode&&!EDGES.some(e=>e.s===selectedNode&&e.t===n.id||e.t===selectedNode&&e.s===n.id)?0.25:1;
-    ctx.font=`${r*0.85}px serif`;ctx.textAlign='center';ctx.textBaseline='middle';
-    ctx.fillStyle=nodeColors[n.level];
-    ctx.fillText(typeEmoji[n.type]||'▦',p.x,p.y);
-    // label
-    ctx.font='9px JetBrains Mono';
-    ctx.fillStyle=n.id===hoveredNode||n.id===selectedNode?nodeColors[n.level]:'rgba(136,153,170,.6)';
-    ctx.textAlign='center';ctx.textBaseline='top';
-    ctx.fillText(n.label.length>14?n.label.slice(0,14)+'...':n.label,p.x,p.y+r+5);
+
+    /* icon */
+    ctx.font = `${Math.max(r * 0.82, 8)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = rc;
+    ctx.shadowBlur = 0;
+    ctx.fillText(TYPE_ICON[n.type] || '▦', p.x, p.y);
+
+    /* label */
+    const labelAlpha = isSelected||isHovered||isNeighbour ? 1 : 0.45;
+    ctx.globalAlpha = dimmed ? 0.1 : labelAlpha;
+    ctx.font = `${Math.max(8, 8 * scale)}px JetBrains Mono`;
+    ctx.fillStyle = isSelected||isHovered ? rc : 'rgba(230,237,243,.75)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const maxLen = 12;
+    const lbl = n.label.length > maxLen ? n.label.slice(0, maxLen) + '…' : n.label;
+    ctx.fillText(lbl, p.x, p.y + r + 4);
+
     ctx.restore();
   });
-  animFrame=requestAnimationFrame(draw);
 }
 
-function getNodeAt(cx,cy){
-  const w=toWorld(cx,cy);
-  return NODES.find(n=>{
-    if(filterActive!=='all'&&n.type!==filterActive)return false;
-    const r=9+(n.risk/100)*13;
-    return Math.hypot(n.x-w.x,n.y-w.y)<r+6;
+let rafId;
+function loop(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  simulate();
+  drawClouds();
+  drawEdges();
+  drawNodes();
+  rafId = requestAnimationFrame(loop);
+}
+
+/* ═══════════════ EVENTS ═══════════════ */
+
+function getNodeAt(cx, cy){
+  const w = toWorld(cx, cy);
+  return visibleNodes().find(n => {
+    const r = nodeRadius(n) + 8;
+    return Math.hypot(n.x - w.x, n.y - w.y) < r;
   });
 }
 
-canvas.addEventListener('mousemove',e=>{
-  const rect=canvas.getBoundingClientRect();
-  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-  if(dragNode){
-    const w=toWorld(mx,my);
-    dragNode.x=w.x;dragNode.y=w.y;
-    return;
-  }
-  if(isDragging){
-    panX=panOrigin.x+(e.clientX-panStart.x);
-    panY=panOrigin.y+(e.clientY-panStart.y);
-    return;
-  }
-  const n=getNodeAt(mx,my);
-  hoveredNode=n?n.id:null;
-  canvas.style.cursor=n?'pointer':'grab';
-  const tip=document.getElementById('tooltip');
-  if(n){
-    tip.style.display='block';
-    tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-10)+'px';
-    tip.innerHTML=`<div class="tooltip-title" style="color:${nodeColors[n.level]}">${typeEmoji[n.type]} ${n.label}</div>
-      <div class="tooltip-row">Тип: <span>${n.type}</span></div>
-      <div class="tooltip-row">Риск: <span style="color:${nodeColors[n.level]}">${n.risk}/100</span></div>
-      ${n.dark?'<div class="tooltip-row" style="color:#9B6DFF">DarkNet-след</div>':''}
-      <div class="tooltip-row">Связей: <span>${EDGES.filter(ed=>ed.s===n.id||ed.t===n.id).length}</span></div>`;
-  } else { tip.style.display='none'; }
-});
-canvas.addEventListener('mousedown',e=>{
-  const rect=canvas.getBoundingClientRect();
-  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-  const n=getNodeAt(mx,my);
-  if(n){dragNode=n;}
-  else{isDragging=true;panStart={x:e.clientX,y:e.clientY};panOrigin={x:panX,y:panY};}
-});
-canvas.addEventListener('mouseup',e=>{
-  if(dragNode){
-    dragNode=null;
-  } else if(!isDragging){
-    const rect=canvas.getBoundingClientRect();
-    const n=getNodeAt(e.clientX-rect.left,e.clientY-rect.top);
-    if(n)openPanel(n.id);
-    else{selectedNode=null;document.getElementById('rp').classList.remove('open');}
-  }
-  isDragging=false;
-});
-canvas.addEventListener('wheel',e=>{
-  e.preventDefault();
-  const delta=e.deltaY>0?-0.1:0.1;
-  const newScale=Math.max(0.3,Math.min(3,scale+delta));
-  const rect=canvas.getBoundingClientRect();
-  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
-  panX=mx-(mx-panX)*(newScale/scale);
-  panY=my-(my-panY)*(newScale/scale);
-  scale=newScale;
-},{passive:false});
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
 
-function openPanel(id){
-  selectedNode=id;
-  const n=NODES.find(x=>x.id===id);
-  if(!n)return;
+  if (dragNode) {
+    const w  = toWorld(mx, my);
+    dragNode.x = w.x; dragNode.y = w.y;
+    dragNode.vx = 0;  dragNode.vy = 0;
+    return;
+  }
+  if (isPanning) {
+    panX = panOrigin.x + (e.clientX - panStart.x);
+    panY = panOrigin.y + (e.clientY - panStart.y);
+    return;
+  }
+
+  const n = getNodeAt(mx, my);
+  hoveredNode = n ? n.id : null;
+  canvas.style.cursor = n ? 'pointer' : (isPanning ? 'grabbing' : 'grab');
+
+  const tip = document.getElementById('tooltip');
+  if (n) {
+    const cl  = CLUSTERS.find(c => c.id === n.cluster);
+    const rc  = riskColor(n.risk);
+    const deg = EDGES.filter(ed => ed.s===n.id || ed.t===n.id).length;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY - 10) + 'px';
+    tip.innerHTML  = `
+      <div class="tt-title" style="color:${rc}">${TYPE_ICON[n.type]} ${n.label}</div>
+      <div class="tt-row">Тип: <b>${TYPE_LABEL[n.type]||n.type}</b></div>
+      <div class="tt-row">Риск: <b style="color:${rc}">${n.risk}/100</b></div>
+      <div class="tt-row">Кластер: <b style="color:${cl?cl.color:'#888'}">${cl?cl.label:'—'}</b></div>
+      <div class="tt-row">Связей: <b>${deg}</b></div>
+      ${n.hub ? '<div class="tt-row" style="color:#FF4A4A;margin-top:3px">★ КЛЮЧЕВОЙ УЗЕЛ</div>' : ''}
+    `;
+  } else {
+    tip.style.display = 'none';
+  }
+});
+
+let mouseDownNode = null;
+let mouseDownPos  = {x:0,y:0};
+let didDrag       = false;
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx   = e.clientX - rect.left, my = e.clientY - rect.top;
+  const n    = getNodeAt(mx, my);
+  mouseDownNode = n || null;
+  mouseDownPos  = {x: e.clientX, y: e.clientY};
+  didDrag       = false;
+  if (n) {
+    dragNode = n;
+  } else {
+    isPanning  = true;
+    panStart   = {x: e.clientX, y: e.clientY};
+    panOrigin  = {x: panX, y: panY};
+    canvas.style.cursor = 'grabbing';
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  const moved = Math.hypot(e.clientX - mouseDownPos.x, e.clientY - mouseDownPos.y) > 4;
+
+  if (dragNode && !moved) {
+    /* it was a click on node */
+    openPanel(dragNode.id);
+  } else if (!dragNode && !moved && !isPanning) {
+    /* click on empty space */
+    closePanel();
+  } else if (isPanning && !moved) {
+    closePanel();
+  }
+
+  dragNode  = null;
+  isPanning = false;
+  canvas.style.cursor = 'grab';
+  document.getElementById('tooltip').style.display = 'none';
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const delta    = e.deltaY > 0 ? -0.08 : 0.08;
+  const newScale = Math.max(0.25, Math.min(3, scale + delta));
+  const rect     = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  panX = mx - (mx - panX) * (newScale / scale);
+  panY = my - (my - panY) * (newScale / scale);
+  scale = newScale;
+}, {passive: false});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#gCanvas') && !e.target.closest('#rp')) return;
+  if (!e.target.closest('#rp')) {/* handled above */}
+});
+
+/* ═══════════════ PANEL ═══════════════ */
+
+function openPanel(id) {
+  selectedNode = id;
+  const n   = nodeById(id);
+  if (!n) return;
+  const rc  = riskColor(n.risk);
+  const cl  = CLUSTERS.find(c => c.id === n.cluster);
+  const deg = EDGES.filter(e => e.s===id || e.t===id).length;
+  const conns = EDGES.filter(e => e.s===id || e.t===id).slice(0, 8).map(e => {
+    const otherId = e.s===id ? e.t : e.s;
+    const other   = nodeById(otherId);
+    return other ? `<div class="conn-item">
+      <div class="conn-dot" style="background:${e.c}"></div>
+      <span class="conn-name">${other.label}</span>
+      <span class="conn-lbl">${e.lbl}</span>
+    </div>` : '';
+  }).join('');
+
+  const signalId = SIGNAL_MAP[n.cluster] || '';
+  const boardUrl = signalId ? `board.html?signal=${signalId}` : 'board.html';
+
   document.getElementById('rp').classList.add('open');
-  const conns=EDGES.filter(e=>e.s===id||e.t===id);
-  document.getElementById('rpInner').innerHTML=`
-    <button class="panel-close" onclick="selectedNode=null;document.getElementById('rp').classList.remove('open')">✕</button>
+  document.getElementById('rpInner').innerHTML = `
+    <button class="panel-close" onclick="closePanel()">✕</button>
     <div>
-      <div style="font-size:20px;margin-bottom:5px;color:${nodeColors[n.level]}">${typeEmoji[n.type]}</div>
-      <div class="rp-title">${n.label}</div>
-      <div class="rp-sub">${n.type}${n.dark?' · DarkNet-след':''}</div>
+      <div class="rp-type">${TYPE_ICON[n.type]} ${TYPE_LABEL[n.type]||n.type}
+        ${n.hub ? ' · ★ КЛЮЧЕВОЙ УЗЕЛ' : ''}
+      </div>
+      <div class="rp-name">${n.label}</div>
+      <div class="rp-sub" style="color:${cl?cl.color:'#888'}">${cl?cl.label:''}</div>
     </div>
     <div class="stat-grid">
-      <div class="stat-box"><div class="stat-val" style="color:${nodeColors[n.level]}">${n.risk}</div><div class="stat-label">РИСК-БАЛЛ</div></div>
-      <div class="stat-box"><div class="stat-val" style="color:var(--cyan)">${conns.length}</div><div class="stat-label">СВЯЗЕЙ</div></div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:${rc}">${n.risk}</div>
+        <div class="stat-lbl">РИСК-БАЛЛ</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-val" style="color:var(--cyan-b)">${deg}</div>
+        <div class="stat-lbl">СВЯЗЕЙ</div>
+      </div>
     </div>
     <div>
-      <div class="rp-section">связанные узлы</div>
-      ${conns.slice(0,6).map(e=>{
-        const other=NODES.find(x=>x.id===(e.s===id?e.t:e.s));
-        return other?`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)">
-          <div style="width:7px;height:7px;border-radius:50%;background:${e.color};flex-shrink:0"></div>
-          <span style="font-family:var(--mono);font-size:10px;color:var(--text)">${other.label}</span>
-          <span style="margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text-dim)">${e.label}</span>
-        </div>`:'';
-      }).join('')}
+      <div class="rp-section">Связанные узлы</div>
+      ${conns || '<div style="font-size:10px;color:var(--text-dim)">Нет связей</div>'}
     </div>
-    <div>
-      <button class="nbtn nbtn-p">ОТКРЫТЬ НА ДОСКЕ</button>
-      <button class="nbtn nbtn-g">ЗАВЕСТИ ДЕЛО</button>
-    </div>`;
+    <div style="display:flex;flex-direction:column;gap:0">
+      <a class="rp-btn rp-btn-p" href="${boardUrl}" target="_blank">ОТКРЫТЬ НА ДОСКЕ</a>
+      <button class="rp-btn rp-btn-g" onclick="closePanel()">Закрыть</button>
+    </div>
+  `;
 }
-function filterType(t,btn){
-  filterActive=t;
-  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
+
+function closePanel(){
+  selectedNode = null;
+  document.getElementById('rp').classList.remove('open');
 }
+
+/* ═══════════════ CONTROLS ═══════════════ */
+
+function setFilter(t, btn){
+  filterActive = t;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const vis = visibleNodes().length;
+  const edg = EDGES.filter(e => {
+    const s=nodeById(e.s),t2=nodeById(e.t);
+    return s&&t2&&(filterActive==='all'||s.type===filterActive||t2.type===filterActive);
+  }).length;
+  document.getElementById('bNodes').innerHTML   = `<b>${vis}</b> узлов`;
+  document.getElementById('bEdges').innerHTML   = `<b>${edg}</b> связей`;
+}
+
 function relayout(){
-  const w=W(),h=H();
-  NODES.forEach((n,i)=>{
-    const angle=(i/NODES.length)*Math.PI*2;
-    const r=Math.min(w,h)*0.32;
-    n.x=w/2+r*Math.cos(angle);
-    n.y=h/2+r*Math.sin(angle);
+  computeClusterCenters();
+  NODES.forEach(n => {
+    const cc = clusterCenters[n.cluster] || {x: W()/2, y: H()/2};
+    n.x  = cc.x + (Math.random() - 0.5) * 130;
+    n.y  = cc.y + (Math.random() - 0.5) * 90;
+    n.vx = 0; n.vy = 0;
   });
+  panX = 0; panY = 0; scale = 1;
+  closePanel();
 }
-window.addEventListener('resize',()=>{resize();});
-resize();initPositions();draw();
+
+/* ═══════════════ INIT ═══════════════ */
+
+function init(){
+  resize();
+  computeClusterCenters();
+  relayout();
+  loop();
+}
+
+window.addEventListener('resize', () => { resize(); computeClusterCenters(); });
+init();
 </script>
 </body>
 </html>
