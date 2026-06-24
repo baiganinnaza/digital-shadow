@@ -1,0 +1,7 @@
+threshold: 0.60
+weights:
+  illegal_sale_detected: 0.40
+  wallet_in_blacklist: 0.30
+  new_account: 0.20
+  linked_to_flagged: 0.20
+  multiple_listings: 0.15

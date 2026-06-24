@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simplex — Доска</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0B0F;--bg-panel:#111318;--bg-card:#161920;
+  --cyan:#00F5FF;--red:#FF2D55;--amber:#FFB800;--green:#00FF9F;
+  --purple:#BF5FFF;--blue:#00BFFF;--text:#E0E0E0;--text-dim:#6B7280;--border:#1E2530;
+  --mono:'JetBrains Mono',monospace;--sans:'Inter',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;background:var(--bg-panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0}
+.logo{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--cyan);text-shadow:0 0 12px #00F5FF88;letter-spacing:2px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.live-label{font-family:var(--mono);font-size:10px;color:var(--green);letter-spacing:1px}
+.nav-pills{display:flex;gap:4px;margin-left:20px}
+.nav-pill{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:3px;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;text-decoration:none;transition:all .15s;letter-spacing:.5px}
+.nav-pill:hover{border-color:var(--cyan)44;color:var(--text)}
+.nav-pill.active{border-color:var(--cyan)66;color:var(--cyan);background:var(--cyan)0f}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.board-tools{display:flex;gap:6px}
+.tool-btn{font-family:var(--mono);font-size:10px;padding:5px 10px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-dim);border-radius:3px;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.tool-btn:hover{border-color:var(--cyan)44;color:var(--cyan)}
+.tool-btn.active{border-color:var(--cyan)66;color:var(--cyan);background:var(--cyan)0f}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--cyan)22;border:1px solid var(--cyan)44;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:12px;color:var(--cyan)}
+.main{display:flex;flex:1;overflow:hidden}
+/* CANVAS */
+.canvas-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
+.canvas-wrap:active{cursor:grabbing}
+.board-bg{position:absolute;inset:0;background-image:radial-gradient(circle,#1E253044 1px,transparent 1px);background-size:28px 28px}
+.board-canvas{position:absolute;width:3000px;height:2000px;top:0;left:0;transform-origin:0 0}
+/* NODE */
+.node{
+  position:absolute;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;cursor:pointer;transition:box-shadow .2s,border-color .2s;min-width:160px;
+  font-family:var(--mono);font-size:11px;user-select:none;
+}
+.node:hover{box-shadow:0 0 20px #00F5FF18;border-color:var(--cyan)44}
+.node.selected{border-color:var(--cyan)!important;box-shadow:0 0 16px var(--cyan)33}
+.node.critical{border-left:3px solid var(--red)}
+.node.critical:hover{box-shadow:0 0 20px var(--red)22}
+.node.medium{border-left:3px solid var(--amber)}
+.node.darknet{border-color:var(--purple)44}
+.node.darknet:hover{box-shadow:0 0 20px var(--purple)22}
+.node-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.node-icon{font-size:16px}
+.node-type{font-size:9px;color:var(--text-dim);letter-spacing:1px;text-transform:uppercase}
+.node-name{font-size:12px;color:var(--text);font-weight:500;margin-bottom:4px;font-family:var(--mono)}
+.node-geo{font-size:10px;color:var(--text-dim);margin-bottom:6px}
+.node-risk-bar{height:2px;background:var(--border);border-radius:1px;overflow:hidden;margin-bottom:6px}
+.node-risk-fill{height:100%;border-radius:1px}
+.node-badges{display:flex;gap:4px;flex-wrap:wrap}
+.nbadge{font-size:8px;padding:2px 6px;border-radius:2px;letter-spacing:.3px}
+.nbadge-dark{background:var(--purple)18;color:var(--purple);border:1px solid var(--purple)33}
+.nbadge-clear{background:var(--blue)18;color:var(--blue);border:1px solid var(--blue)33}
+.nbadge-risk{background:var(--red)18;color:var(--red);border:1px solid var(--red)33}
+.nbadge-med{background:var(--amber)18;color:var(--amber);border:1px solid var(--amber)33}
+.nbadge-low{background:var(--green)18;color:var(--green);border:1px solid var(--green)33}
+/* SVG connections */
+.connections-svg{position:absolute;top:0;left:0;width:3000px;height:2000px;pointer-events:none}
+/* MINIMAP */
+.minimap{
+  position:absolute;bottom:16px;right:16px;width:180px;height:110px;
+  background:var(--bg-panel)cc;border:1px solid var(--border);border-radius:6px;overflow:hidden;
+}
+.minimap-label{font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:4px 8px;border-bottom:1px solid var(--border)}
+.minimap-canvas{position:relative;height:calc(100% - 22px);}
+.minimap-dot{position:absolute;border-radius:2px;cursor:pointer}
+/* ZOOM CONTROLS */
+.zoom-controls{
+  position:absolute;bottom:16px;left:16px;display:flex;flex-direction:column;gap:4px;
+}
+.zoom-btn{
+  width:32px;height:32px;background:var(--bg-panel);border:1px solid var(--border);
+  color:var(--text-dim);border-radius:4px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+  transition:all .15s;
+}
+.zoom-btn:hover{border-color:var(--cyan)44;color:var(--cyan)}
+/* RIGHT PANEL */
+.right-panel{
+  width:0;flex-shrink:0;background:var(--bg-panel);border-left:1px solid var(--border);
+  overflow:hidden;transition:width .25s ease;
+}
+.right-panel.open{width:340px}
+.rp-inner{width:340px;padding:18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;height:100%}
+.rp-inner::-webkit-scrollbar{width:3px}.rp-inner::-webkit-scrollbar-thumb{background:var(--border)}
+.panel-close{background:none;border:1px solid var(--border);color:var(--text-dim);width:24px;height:24px;border-radius:3px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;align-self:flex-end}
+.panel-close:hover{border-color:var(--red)66;color:var(--red)}
+.rp-title{font-family:var(--mono);font-size:14px;color:var(--text);font-weight:500}
+.rp-sub{font-size:11px;color:var(--text-dim);margin-top:2px}
+.rp-section{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px}
+.rp-risk-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:5px}
+.rp-risk-fill{height:100%;border-radius:3px}
+.rp-score{font-family:var(--mono);font-size:12px}
+.conn-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-dim)}
+.conn-item:last-child{border-bottom:none}
+.conn-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.conn-name{color:var(--text);font-family:var(--mono);font-size:10px}
+.conn-type{margin-left:auto;font-family:var(--mono);font-size:9px;color:var(--text-dim)}
+.rp-btn{width:100%;font-family:var(--mono);font-size:10px;letter-spacing:.8px;padding:8px;border-radius:3px;cursor:pointer;transition:all .15s;text-transform:uppercase;text-align:center;border:1px solid;margin-top:4px}
+.rp-btn-p{background:var(--cyan)18;color:var(--cyan);border-color:var(--cyan)44}
+.rp-btn-p:hover{background:var(--cyan)28;box-shadow:0 0 10px var(--cyan)22}
+.rp-btn-g{background:transparent;color:var(--text-dim);border-color:var(--border)}
+.rp-btn-g:hover{color:var(--text)}
+.bottom-bar{height:40px;background:var(--bg-panel);border-top:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:20px;flex-shrink:0}
+.bottom-hint{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.bottom-hint kbd{background:var(--bg-card);border:1px solid var(--border);padding:1px 5px;border-radius:2px;font-family:var(--mono);font-size:9px}
+.legend{display:flex;gap:14px;margin-left:auto}
+.leg-item{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text-dim)}
+.leg-line{width:20px;height:2px;border-radius:1px}
+.leg-line.dashed{background:none;border-top:2px dashed}
+/* CONTEXT MENU */
+.ctx-menu{
+  position:fixed;background:var(--bg-panel);border:1px solid var(--border);border-radius:6px;
+  padding:4px 0;z-index:100;min-width:160px;box-shadow:0 8px 24px #00000066;
+  display:none;
+}
+.ctx-menu.show{display:block}
+.ctx-item{padding:7px 14px;font-family:var(--mono);font-size:11px;color:var(--text-dim);cursor:pointer;display:flex;align-items:center;gap:8px}
+.ctx-item:hover{background:var(--bg-card);color:var(--text)}
+.ctx-divider{height:1px;background:var(--border);margin:3px 0}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="logo">◈ Simplex</div>
+  <div class="live-dot"></div>
+  <span class="live-label">LIVE</span>
+  <nav class="nav-pills">
+    <a class="nav-pill" href="feed.html">ЛЕНТА</a>
+    <a class="nav-pill active" href="#">ДОСКА</a>
+    <a class="nav-pill" href="graph.html">ГРАФ</a>
+    <a class="nav-pill" href="map.html">КАРТА</a>
+    <a class="nav-pill" href="cases.html">КЕЙСЫ</a>
+  </nav>
+  <div class="board-tools">
+    <button class="tool-btn active" id="btnSelect" onclick="setTool('select')">△ ВЫБОР</button>
+    <button class="tool-btn" id="btnPan" onclick="setTool('pan')">∴ ПАН</button>
+    <button class="tool-btn" onclick="autoLayout()">⊞ АВТО</button>
+    <button class="tool-btn" onclick="fitAll()">⊡ ВПИСАТЬ</button>
+  </div>
+  <div class="topbar-right">
+    <div class="avatar">АН</div>
+  </div>
+</div>
+<div class="main">
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="board-bg"></div>
+    <svg class="connections-svg" id="connSvg"></svg>
+    <div class="board-canvas" id="boardCanvas"></div>
+    <div class="minimap" id="minimap">
+      <div class="minimap-label">МИНИ-КАРТА</div>
+      <div class="minimap-canvas" id="minimapCanvas"></div>
+    </div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoom(0.15)">+</button>
+      <button class="zoom-btn" style="font-size:12px" id="zoomLabel">100%</button>
+      <button class="zoom-btn" onclick="zoom(-0.15)">-</button>
+      <button class="zoom-btn" style="font-size:11px" onclick="fitAll()">⊡</button>
+    </div>
+  </div>
+  <div class="right-panel" id="rp"><div class="rp-inner" id="rpInner"></div></div>
+</div>
+<div class="bottom-bar">
+  <span class="bottom-hint"><kbd>Scroll</kbd> зум &nbsp; <kbd>Drag</kbd> пан &nbsp; <kbd>Click</kbd> выбор &nbsp; <kbd>ПКМ</kbd> меню</span>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-line" style="background:var(--cyan)"></div> ОДИН КОШ.</div>
+    <div class="leg-item"><div class="leg-line" style="background:var(--purple)"></div> ОДИН НИК</div>
+    <div class="leg-item"><div class="leg-line" style="background:var(--amber)"></div> ТЕЛЕФОН</div>
+    <div class="leg-item"><div class="leg-line" style="background:var(--red)"></div> ПРЯМ. УПОМ.</div>
+  </div>
+</div>
+<div class="ctx-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="ctxAction('open')">⌕ Открыть детали</div>
+  <div class="ctx-item" onclick="ctxAction('connect')">― Провести связь</div>
+  <div class="ctx-item" onclick="ctxAction('expand')">⬡ Раскрыть соседей</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" onclick="ctxAction('case')">▤ Завести дело</div>
+  <div class="ctx-item" onclick="ctxAction('pin')">◆ Закрепить</div>
+  <div class="ctx-divider"></div>
+  <div class="ctx-item" style="color:var(--red)" onclick="ctxAction('del')">✕ Удалить</div>
+</div>
+<script>
+const NODES = [
+  {id:'n1',x:320,y:260,type:'person',icon:'◉',name:'phantom_kz',geo:'Алматы',risk:87,level:'critical',dark:true,conns:[{to:'n2',color:'#BF5FFF',label:'тот же ник'},{to:'n3',color:'#00F5FF',label:'тот же кошелёк'}]},
+  {id:'n2',x:620,y:160,type:'telegram',icon:'◈',name:'@kz_drop_alm',geo:'Алматы',risk:94,level:'critical',dark:false,conns:[{to:'n3',color:'#00F5FF',label:'тот же кошелёк'}]},
+  {id:'n3',x:620,y:400,type:'wallet',icon:'◈',name:'bc1qx7kp...',geo:'—',risk:82,level:'critical',dark:true,conns:[{to:'n4',color:'#BF5FFF',label:'адрес в DN'}]},
+  {id:'n4',x:920,y:300,type:'darknet',icon:'⬢',name:'DN-маркет #A41',geo:'Шымкент',risk:91,level:'critical',dark:true,conns:[{to:'n5',color:'#FF2D55',label:'прямое упом.'}]},
+  {id:'n5',x:1180,y:200,type:'person',icon:'◉',name:'drop_shym_2',geo:'Шымкент',risk:65,level:'medium',dark:true,conns:[]},
+  {id:'n6',x:260,y:520,type:'listing',icon:'▤',name:'OLX #4821',geo:'Алматы',risk:55,level:'medium',dark:false,conns:[{to:'n1',color:'#BF5FFF',label:'тот же ник'}]},
+  {id:'n7',x:760,y:560,type:'wallet',icon:'◈',name:'bc1qm88...',geo:'—',risk:61,level:'medium',dark:true,conns:[{to:'n3',color:'#00F5FF',label:'общая цепочка'}]},
+  {id:'n8',x:460,y:680,type:'telegram',icon:'◈',name:'@vape_opt_kz',geo:'Шымкент',risk:40,level:'medium',dark:false,conns:[{to:'n6',color:'#FFB800',label:'телефон'}]},
+];
+const NODE_W=180, NODE_H=110;
+let scale=1, panX=40, panY=40, dragging=null, dragOffX=0, dragOffY=0, isPanning=false, panStartX=0, panStartY=0, panStartPX=0, panStartPY=0, selectedId=null, tool='select', ctxTarget=null;
+
+const canvas=document.getElementById('boardCanvas');
+const wrap=document.getElementById('canvasWrap');
+const svg=document.getElementById('connSvg');
+
+function applyTransform(){
+  canvas.style.transform=`scale(${scale})`;
+  svg.style.transform=`scale(${scale})`;
+  canvas.style.transformOrigin='0 0';
+  svg.style.transformOrigin='0 0';
+  canvas.style.left=panX+'px';
+  canvas.style.top=panY+'px';
+  svg.style.left=panX+'px';
+  svg.style.top=panY+'px';
+  document.getElementById('zoomLabel').textContent=Math.round(scale*100)+'%';
+}
+
+function renderNodes(){
+  canvas.innerHTML='';
+  NODES.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='node '+n.level+(n.dark?' darknet':'')+(n.id===selectedId?' selected':'');
+    el.id='node_'+n.id;
+    el.style.left=n.x+'px';
+    el.style.top=n.y+'px';
+    el.style.width=NODE_W+'px';
+    const fillColor=n.level==='critical'?'var(--red)':n.level==='medium'?'var(--amber)':'var(--green)';
+    el.innerHTML=`
+      <div class="node-header">
+        <span class="node-icon">${n.icon}</span>
+        <span class="node-type">${n.type}</span>
+        ${n.dark?'<span class="nbadge nbadge-dark" style="margin-left:auto">DN</span>':''}
+      </div>
+      <div class="node-name">${n.name}</div>
+      ${n.geo!=='—'?`<div class="node-geo">⌖ ${n.geo}</div>`:''}
+      <div class="node-risk-bar"><div class="node-risk-fill" style="width:${n.risk}%;background:${fillColor};box-shadow:0 0 4px ${fillColor}"></div></div>
+      <div class="node-badges">
+        <span class="nbadge nbadge-${n.level==='critical'?'risk':n.level==='medium'?'med':'low'}">${n.risk}</span>
+      </div>`;
+    el.addEventListener('mousedown',e=>{ if(tool==='select'&&e.button===0){startDrag(e,n);selectNode(n.id)} });
+    el.addEventListener('contextmenu',e=>{ e.preventDefault();showCtx(e,n.id) });
+    el.addEventListener('click',e=>{ if(tool==='select')openPanel(n.id) });
+    canvas.appendChild(el);
+  });
+  renderConnections();
+  renderMinimap();
+}
+
+function renderConnections(){
+  svg.innerHTML='';
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  ['cyan','purple','amber','red'].forEach(c=>{
+    const colors={cyan:'#00F5FF',purple:'#BF5FFF',amber:'#FFB800',red:'#FF2D55'};
+    const m=document.createElementNS('http://www.w3.org/2000/svg','marker');
+    m.setAttribute('id','arr_'+c);m.setAttribute('markerWidth','6');m.setAttribute('markerHeight','6');
+    m.setAttribute('refX','5');m.setAttribute('refY','3');m.setAttribute('orient','auto');
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d','M0,0 L0,6 L6,3 z');path.setAttribute('fill',colors[c]);
+    m.appendChild(path);defs.appendChild(m);
+  });
+  svg.appendChild(defs);
+  NODES.forEach(n=>{
+    n.conns.forEach(c=>{
+      const target=NODES.find(x=>x.id===c.to);
+      if(!target)return;
+      const x1=n.x+NODE_W/2,y1=n.y+NODE_H/2;
+      const x2=target.x+NODE_W/2,y2=target.y+NODE_H/2;
+      const dx=x2-x1,dy=y2-y1;
+      const cx1=x1+dx*0.4,cy1=y1,cx2=x2-dx*0.4,cy2=y2;
+      const key=c.color==='#00F5FF'?'cyan':c.color==='#BF5FFF'?'purple':c.color==='#FFB800'?'amber':'red';
+      const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('d',`M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`);
+      path.setAttribute('stroke',c.color);path.setAttribute('stroke-width','1.5');
+      path.setAttribute('fill','none');path.setAttribute('opacity','0.7');
+      path.setAttribute('stroke-dasharray','6 4');
+      path.setAttribute('marker-end',`url(#arr_${key})`);
+      path.style.animation='dash 3s linear infinite';
+      const textPath=document.createElementNS('http://www.w3.org/2000/svg','text');
+      textPath.setAttribute('font-size','9');textPath.setAttribute('fill',c.color);
+      textPath.setAttribute('opacity','0.7');textPath.setAttribute('font-family','JetBrains Mono');
+      const tpChild=document.createElementNS('http://www.w3.org/2000/svg','textPath');
+      const pid='tp_'+Math.random().toString(36).slice(2);
+      path.setAttribute('id',pid);tpChild.setAttribute('href','#'+pid);
+      tpChild.setAttribute('startOffset','35%');tpChild.textContent=c.label;
+      textPath.appendChild(tpChild);
+      svg.appendChild(path);svg.appendChild(textPath);
+    });
+  });
+  const style=document.createElementNS('http://www.w3.org/2000/svg','style');
+  style.textContent='@keyframes dash{to{stroke-dashoffset:-20}}';
+  svg.insertBefore(style,svg.firstChild);
+}
+
+function renderMinimap(){
+  const mc=document.getElementById('minimapCanvas');
+  mc.innerHTML='';
+  const W=3000,H=2000,mW=180,mH=88;
+  NODES.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='minimap-dot';
+    d.style.left=(n.x/W*mW)+'px';
+    d.style.top=(n.y/H*mH)+'px';
+    d.style.width='8px';d.style.height='6px';
+    const colors={critical:'#FF2D55',medium:'#FFB800',low:'#00FF9F'};
+    d.style.background=colors[n.level];
+    d.style.opacity='0.8';
+    mc.appendChild(d);
+  });
+}
+
+function startDrag(e,n){
+  if(tool!=='select')return;
+  dragging=n;
+  const rect=canvas.getBoundingClientRect();
+  dragOffX=(e.clientX-rect.left)/scale-n.x;
+  dragOffY=(e.clientY-rect.top)/scale-n.y;
+  e.stopPropagation();
+}
+
+wrap.addEventListener('mousedown',e=>{
+  if(e.button===1||(tool==='pan'&&e.button===0)){
+    isPanning=true;
+    panStartX=e.clientX;panStartY=e.clientY;
+    panStartPX=panX;panStartPY=panY;
+    e.preventDefault();
+  } else if(e.button===0&&tool==='select'&&!dragging){
+    selectedId=null;renderNodes();
+    document.getElementById('rp').classList.remove('open');
+  }
+});
+
+document.addEventListener('mousemove',e=>{
+  if(dragging){
+    const rect=canvas.getBoundingClientRect();
+    dragging.x=(e.clientX-rect.left)/scale-dragOffX;
+    dragging.y=(e.clientY-rect.top)/scale-dragOffY;
+    const el=document.getElementById('node_'+dragging.id);
+    if(el){el.style.left=dragging.x+'px';el.style.top=dragging.y+'px';}
+    renderConnections();renderMinimap();
+  } else if(isPanning){
+    panX=panStartPX+(e.clientX-panStartX);
+    panY=panStartPY+(e.clientY-panStartY);
+    applyTransform();
+  }
+});
+document.addEventListener('mouseup',()=>{dragging=null;isPanning=false;});
+
+wrap.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const delta=e.deltaY>0?-0.1:0.1;
+  const newScale=Math.max(0.3,Math.min(2,scale+delta));
+  const rect=wrap.getBoundingClientRect();
+  const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  panX=mx-(mx-panX)*(newScale/scale);
+  panY=my-(my-panY)*(newScale/scale);
+  scale=newScale;applyTransform();
+},{passive:false});
+
+function zoom(delta){
+  scale=Math.max(0.3,Math.min(2,scale+delta));
+  applyTransform();
+}
+function fitAll(){
+  scale=0.7;panX=60;panY=60;applyTransform();
+}
+function setTool(t){
+  tool=t;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn'+t.charAt(0).toUpperCase()+t.slice(1)).classList.add('active');
+  wrap.style.cursor=t==='pan'?'grab':'default';
+}
+function autoLayout(){
+  const cols=3,gap=220;
+  NODES.forEach((n,i)=>{n.x=80+( i%cols)*gap;n.y=80+Math.floor(i/cols)*180;});
+  renderNodes();
+}
+function selectNode(id){selectedId=id;renderNodes();}
+
+function openPanel(id){
+  const n=NODES.find(x=>x.id===id);
+  if(!n)return;
+  selectedId=id;renderNodes();
+  document.getElementById('rp').classList.add('open');
+  const connectedNodes=NODES.filter(x=>x.conns.some(c=>c.to===id)).concat(NODES.find(x=>x.id===id).conns.map(c=>NODES.find(x=>x.id===c.to))).filter(Boolean);
+  const fillColor=n.level==='critical'?'var(--red)':n.level==='medium'?'var(--amber)':'var(--green)';
+  document.getElementById('rpInner').innerHTML=`
+    <button class="panel-close" onclick="document.getElementById('rp').classList.remove('open');selectedId=null;renderNodes()">✕</button>
+    <div>
+      <div style="font-size:20px;margin-bottom:6px">${n.icon}</div>
+      <div class="rp-title">${n.name}</div>
+      <div class="rp-sub">${n.type} · ${n.geo}</div>
+    </div>
+    <div>
+      <div class="rp-section">Риск</div>
+      <div class="rp-risk-bar"><div class="rp-risk-fill" style="width:${n.risk}%;background:${fillColor};box-shadow:0 0 6px ${fillColor}"></div></div>
+      <div class="rp-score" style="color:${fillColor}">${n.risk}/100</div>
+    </div>
+    <div>
+      <div class="rp-section">Связи (${connectedNodes.length})</div>
+      ${connectedNodes.slice(0,5).map(cn=>{
+        const conn=n.conns.find(c=>c.to===cn.id)||(NODES.find(x=>x.id===cn.id)||{conns:[]}).conns.find(c=>c.to===id)||{};
+        return `<div class="conn-item"><div class="conn-dot" style="background:${conn.color||'var(--cyan)'}"></div><span class="conn-name">${cn.name}</span><span class="conn-type">${conn.label||''}</span></div>`;
+      }).join('')}
+    </div>
+    <div>
+      <button class="rp-btn rp-btn-p">ОТКРЫТЬ В ЛЕНТЕ</button>
+      <button class="rp-btn rp-btn-g">ЗАВЕСТИ ДЕЛО</button>
+    </div>`;
+}
+
+let ctxTargetId=null;
+function showCtx(e,id){
+  ctxTargetId=id;
+  const m=document.getElementById('ctxMenu');
+  m.style.left=e.clientX+'px';m.style.top=e.clientY+'px';
+  m.classList.add('show');
+}
+function ctxAction(a){
+  document.getElementById('ctxMenu').classList.remove('show');
+  if(a==='open'&&ctxTargetId)openPanel(ctxTargetId);
+}
+document.addEventListener('click',()=>document.getElementById('ctxMenu').classList.remove('show'));
+document.addEventListener('contextmenu',e=>{ if(!e.target.closest('.node'))document.getElementById('ctxMenu').classList.remove('show') });
+
+applyTransform();
+renderNodes();
+</script>
+</body>
+</html>

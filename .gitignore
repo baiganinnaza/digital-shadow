@@ -1,0 +1,22 @@
+# Environment
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Frontend (old React deps — no longer used)
+frontend/node_modules/
+frontend/dist/
+
+# Data
+dump.rdb
+data/tg_session.session
+
+# OS
+.DS_Store
+Thumbs.db
