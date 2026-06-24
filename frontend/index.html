@@ -321,9 +321,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh
   <nav class="nav-pills">
     <button class="nav-pill active" data-view="feed" onclick="showView('feed')">ЛЕНТА</button>
     <a class="nav-pill" href="board.html" target="_blank" style="text-decoration:none">ДОСКА</a>
-    <button class="nav-pill" data-view="graph" onclick="showView('graph')">ГРАФ</button>
-    <button class="nav-pill" data-view="map" onclick="showView('map')">КАРТА</button>
-    <button class="nav-pill" data-view="cases" onclick="showView('cases')">КЕЙСЫ</button>
+    <a class="nav-pill" href="graph.html" target="_blank" style="text-decoration:none">ГРАФ</a>
+    <a class="nav-pill" href="map.html" target="_blank" style="text-decoration:none">КАРТА</a>
+    <a class="nav-pill" href="cases.html" target="_blank" style="text-decoration:none">КЕЙСЫ</a>
   </nav>
   <div class="search-wrap"><span class="search-icon">⌕</span><input id="globalSearch" placeholder="ПОИСК ПО БАЗЕ..." oninput="FEED.search(this.value)"></div>
   <div class="topbar-right">
@@ -339,9 +339,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);height:100vh
         <div class="nav-section">
           <div class="nav-item active" onclick="showView('feed')"><span>⬡</span> ЛЕНТА</div>
           <div class="nav-item" onclick="window.open('board.html','_blank')"><span>◎</span> ДОСКА</div>
-          <div class="nav-item" onclick="showView('graph')"><span>⬡</span> ГРАФ</div>
-          <div class="nav-item" onclick="showView('map')"><span>◈</span> КАРТА</div>
-          <div class="nav-item" onclick="showView('cases')"><span>⬡</span> КЕЙСЫ</div>
+          <div class="nav-item" onclick="window.open('graph.html','_blank')"><span>⬡</span> ГРАФ</div>
+          <div class="nav-item" onclick="window.open('map.html','_blank')"><span>◈</span> КАРТА</div>
+          <div class="nav-item" onclick="window.open('cases.html','_blank')"><span>⬡</span> КЕЙСЫ</div>
         </div>
         <div class="nav-divider"></div>
         <div class="filter-label">Фильтры</div>
