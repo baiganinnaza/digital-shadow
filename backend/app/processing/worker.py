@@ -23,8 +23,8 @@ async def _async_process(post_id: int):
     from app.linking.graph import upsert_node, upsert_edge
     from app.risk.rules import calculate_risk
 
-    # Load classifier lazily (model may not exist at import time)
-    sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
+    # /app/app/processing/worker.py → parents[2] == /app, ml/ is mounted there
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
     from ml.classifier import Classifier
     from app.config import settings as _settings
     settings = _settings

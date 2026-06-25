@@ -94,7 +94,7 @@ services:
       MODEL_PATH: /app/ml/models/clf.joblib
     volumes:
       - ./data:/app/data
-      - ./ml/models:/app/ml/models
+      - ./ml:/app/ml
     depends_on:
       postgres:
         condition: service_healthy
