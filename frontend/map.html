@@ -128,7 +128,7 @@ body{background:#000;color:var(--text);font-family:var(--sans);display:flex;flex
 
 <div class="tooltip" id="tooltip"></div>
 
-<script src="//unpkg.com/globe.gl"></script>
+<script src="//unpkg.com/globe.gl@2.26.4/dist/globe.gl.min.js"></script>
 <script>
 /* ══════════════════ DATA ══════════════════ */
 
@@ -141,7 +141,7 @@ const KZ_REGIONS = [
   {name:'Астана',           lat:51.180, lng:71.446, signals:19, cases:2, risk:'high',     desc:'Утечка БД · Финансовые схемы'},
   {name:'Тараз',            lat:42.900, lng:71.363, signals:6,  cases:1, risk:'medium',   desc:'Закладки · Вейп-контрабанда'},
   {name:'Кызылорда',        lat:44.852, lng:65.509, signals:12, cases:1, risk:'medium',   desc:'Закладки · Telegram-каналы'},
-  {name:'Актобе',           lat:50.300, lng:57.154, signals:8,  cases:1, risk:'medium',   desc:'OLX-мошенничество'},
+  {name:'Актобе',           lat:50.280, lng:57.207, signals:8,  cases:1, risk:'medium',   desc:'OLX-мошенничество'},
   {name:'Атырау',           lat:47.117, lng:51.920, signals:5,  cases:0, risk:'medium',   desc:'Контрабанда нефтепродуктов'},
   {name:'Актау',            lat:43.652, lng:51.157, signals:4,  cases:0, risk:'medium',   desc:'Транзит через Каспий'},
   {name:'Усть-Каменогорск', lat:49.948, lng:82.628, signals:4,  cases:0, risk:'low',      desc:'Фишинг · Мошенничество'},
@@ -208,8 +208,12 @@ function initGlobe() {
   globe.onGlobeReady(() => {
     document.getElementById('loadingEl').style.display = 'none';
 
+    // snap camera to Kazakhstan FIRST — default Globe.gl orientation
+    // faces the Pacific (lng=180°), so we must override immediately
+    globe.pointOfView({lat:48, lng:66, altitude:1.9}, 0);
+
     const ctrl = globe.controls();
-    ctrl.autoRotate      = false;   // off until camera settles
+    ctrl.autoRotate      = false;
     ctrl.autoRotateSpeed = 0.35;
     ctrl.enableDamping   = true;
     ctrl.dampingFactor   = 0.08;
@@ -222,11 +226,12 @@ function initGlobe() {
       rotTimer = setTimeout(() => { ctrl.autoRotate = true; }, 4000);
     });
 
-    globe.pointOfView({lat:48, lng:66, altitude:1.9}, 0);
     setTab('regions', document.getElementById('tab-regions'));
 
-    // enable rotation only after camera has snapped to Kazakhstan
-    setTimeout(() => { ctrl.autoRotate = true; }, 800);
+    // enable rotation only after 2 frames so the snap is visible first
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      ctrl.autoRotate = true;
+    }));
   });
 }
 
@@ -289,7 +294,7 @@ function showRegions() {
       d?[`Сигналов: <b>${d.signals}</b>`,`Кейсов: <b>${d.cases}</b>`,`Риск: <b style="color:${RC[d.risk]}">${RL[d.risk]}</b>`]:[]
     ));
 
-  globe.pointOfView({lat:48, lng:66, altitude:1.9}, 1000);
+  globe.pointOfView({lat:48, lng:66, altitude:1.9}, 0);
 }
 
 /* ─── ЮРИСДИКЦИИ ─── */
