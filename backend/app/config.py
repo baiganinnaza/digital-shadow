@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     # Telegram — StringSession (run scripts/tg_auth.py once locally)
     tg_session_string: str = ""
 
+    # Local LLM (Ollama)
+    ollama_url: str = "http://ollama:11434"
+    ollama_model: str = "qwen2.5:3b"
+
     # Blockchain APIs
     etherscan_api_key: str = ""   # optional, free at etherscan.io
 

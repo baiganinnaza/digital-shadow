@@ -138,16 +138,15 @@ services:
     depends_on:
       - api
 
-  # ollama:
-  #   image: ollama/ollama
-  #   restart: unless-stopped
-  #   profiles: ["llm"]
-  #   volumes:
-  #     - ollama_data:/root/.ollama
-  #   ports:
-  #     - "11434:11434"
+  ollama:
+    image: ollama/ollama
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11434:11434"
 
 volumes:
   postgres_data:
   neo4j_data:
-  # ollama_data:
+  ollama_data:

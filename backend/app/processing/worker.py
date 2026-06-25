@@ -25,10 +25,10 @@ async def _async_process(post_id: int):
 
     # /app/app/processing/worker.py → parents[2] == /app, ml/ is mounted there
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-    from ml.classifier import Classifier
+    from ml.llm_classifier import LLMClassifier
     from app.config import settings as _settings
     settings = _settings
-    clf = Classifier.get()
+    clf = LLMClassifier.get()
 
     async with AsyncSessionLocal() as db:
         result = await db.execute(select(RawPost).where(RawPost.id == post_id))

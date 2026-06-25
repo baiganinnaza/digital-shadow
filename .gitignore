@@ -20,3 +20,4 @@ data/tg_session.session
 # OS
 .DS_Store
 Thumbs.db
+frontend-references/
