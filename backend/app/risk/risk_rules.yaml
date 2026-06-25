@@ -1,4 +1,4 @@
-threshold: 0.35
+threshold: 0.15
 
 weights:
   illegal_sale_detected:  0.60
