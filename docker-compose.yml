@@ -118,6 +118,13 @@ services:
       NEO4J_PASSWORD: ${NEO4J_PASSWORD:-shadowpass}
       SEED_FILE_PATH: /app/data/seed_posts.jsonl
       WALLET_BLACKLIST_PATH: /app/data/wallet_blacklist.txt
+      USE_PUBLIC_SOURCES: "true"
+      TG_API_ID: ${TG_API_ID}
+      TG_API_HASH: ${TG_API_HASH}
+      TG_CHANNELS: ${TG_CHANNELS}
+      TG_SESSION_STRING: ${TG_SESSION_STRING}
+      TG_LOOKBACK_HOURS: ${TG_LOOKBACK_HOURS:-24}
+      OLX_KEYWORDS: ${OLX_KEYWORDS:-вейп,дроп,нал доставка}
     volumes:
       - ./data:/app/data
       - ./ml/models:/app/ml/models
