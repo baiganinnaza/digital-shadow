@@ -28,11 +28,22 @@ async def collect_and_enqueue():
     redis_conn = Redis.from_url(settings.redis_url)
     q = Queue(connection=redis_conn)
 
+    # Load blockchain wallets in the main async context (never from a thread)
+    wallets: list[str] = []
+    if settings.use_public_sources:
+        from app.models import Entity
+        async with AsyncSessionLocal() as db:
+            res = await db.execute(
+                select(Entity.value).where(Entity.type == "wallet")
+                .distinct().limit(60)
+            )
+            wallets = [row[0] for row in res.all()]
+
     collectors = [SeedCollector(batch_size=10)]
     if settings.use_public_sources:
         collectors.append(TelegramCollector())
         collectors.append(OlxCollector())
-        collectors.append(BlockchainCollector())
+        collectors.append(BlockchainCollector(wallets=wallets))
 
     posts_data = []
     for collector in collectors:

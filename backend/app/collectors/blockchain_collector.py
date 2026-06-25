@@ -25,7 +25,15 @@ MAX_WALLETS_QUERY = 60       # wallets to check per cycle
 
 
 class BlockchainCollector(BaseCollector):
-    """Checks wallets seen in posts for suspicious on-chain activity."""
+    """Checks wallets seen in posts for suspicious on-chain activity.
+
+    Wallet addresses must be supplied at construction time — the caller
+    (scheduler) is responsible for loading them from the DB in the main
+    async context so we never touch AsyncSessionLocal from a thread.
+    """
+
+    def __init__(self, wallets: list[str] | None = None):
+        self._wallets = wallets or []
 
     def fetch(self) -> list[RawPostData]:
         import concurrent.futures
@@ -38,7 +46,7 @@ class BlockchainCollector(BaseCollector):
                 return []
 
     async def _async_fetch(self) -> list[RawPostData]:
-        wallets = await self._load_wallets_from_db()
+        wallets = self._wallets
         logger.info(f"BlockchainCollector: checking {len(wallets)} wallets")
         results: list[RawPostData] = []
 
@@ -57,23 +65,6 @@ class BlockchainCollector(BaseCollector):
 
         logger.info(f"BlockchainCollector: {len(results)} transactions found")
         return results
-
-    # ── Helpers ───────────────────────────────────────────────────────────────
-
-    async def _load_wallets_from_db(self) -> list[str]:
-        from sqlalchemy import select
-        from app.db import AsyncSessionLocal
-        from app.models import Entity
-
-        async with AsyncSessionLocal() as db:
-            stmt = (
-                select(Entity.value)
-                .where(Entity.type == "wallet")
-                .distinct()
-                .limit(MAX_WALLETS_QUERY)
-            )
-            result = await db.execute(stmt)
-            return [row[0] for row in result.all()]
 
     # ── TRON ─────────────────────────────────────────────────────────────────
 
