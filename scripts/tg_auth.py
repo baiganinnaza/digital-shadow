@@ -1,46 +1,27 @@
 """
-One-time Telegram authorization.
-Run once to create the session file; after that collectors work automatically.
+One-time Telegram session setup. Run LOCALLY (not in Docker):
+    pip install telethon
+    python scripts/tg_auth.py
 
-Usage:
-  cd digital-shadow
-  python scripts/tg_auth.py
-
-Requires in .env:
-  TG_API_ID=...
-  TG_API_HASH=...
+Get API_ID and API_HASH at https://my.telegram.org/apps
+Copy the output TG_SESSION_STRING into your .env file.
 """
-import asyncio
-import sys
-from pathlib import Path
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
+print("=== Digital Shadow — Telegram Session Setup ===\n")
+print("Получи credentials на https://my.telegram.org/apps\n")
 
-from app.config import settings
+api_id   = int(input("API_ID:   "))
+api_hash = input("API_HASH: ").strip()
+phone    = input("Номер телефона (+77001234567): ").strip()
 
+with TelegramClient(StringSession(), api_id, api_hash) as client:
+    client.start(phone=phone)
+    session_string = client.session.save()
 
-async def main():
-    from telethon import TelegramClient
-
-    if not settings.tg_api_id or not settings.tg_api_hash:
-        print("ERROR: TG_API_ID and TG_API_HASH must be set in .env")
-        print("Get them at: https://my.telegram.org/apps")
-        sys.exit(1)
-
-    session_path = settings.tg_session_path
-    Path(session_path).parent.mkdir(parents=True, exist_ok=True)
-
-    client = TelegramClient(session_path, int(settings.tg_api_id), settings.tg_api_hash)
-
-    await client.start()  # interactive: asks phone → code → 2FA if needed
-
-    me = await client.get_me()
-    print(f"\nAuthorized as: {me.first_name} (@{me.username})")
-    print(f"Session saved to: {session_path}.session")
-    print("\nYou can now run the collector with USE_PUBLIC_SOURCES=true")
-
-    await client.disconnect()
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+print("\n✅ Авторизация прошла успешно!\n")
+print("Добавь в .env файл следующие строки:\n")
+print(f"TG_API_ID={api_id}")
+print(f"TG_API_HASH={api_hash}")
+print(f"TG_SESSION_STRING={session_string}")

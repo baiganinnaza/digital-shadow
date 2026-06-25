@@ -26,6 +26,8 @@ async def _async_process(post_id: int):
     # Load classifier lazily (model may not exist at import time)
     sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
     from ml.classifier import Classifier
+    from app.config import settings as _settings
+    settings = _settings
     clf = Classifier.get()
 
     async with AsyncSessionLocal() as db:
@@ -73,6 +75,7 @@ async def _async_process(post_id: int):
             driver.close()
 
         # 5. Risk scoring — per object
+        new_signals = []
         async with AsyncSessionLocal() as db2:
             for obj in objects:
                 risk = await calculate_risk(db2, obj, saved_entities, clf_result)
@@ -83,7 +86,28 @@ async def _async_process(post_id: int):
                     category=clf_result["category"],
                 )
                 db2.add(signal)
+                await db2.flush()
+                if risk["flagged"]:
+                    new_signals.append({
+                        "type":     "new_signal",
+                        "id":       signal.id,
+                        "category": clf_result["category"],
+                        "score":    round(risk["score"], 3),
+                        "object":   obj.key,
+                        "source":   post.source,
+                    })
             await db2.commit()
+
+        # Publish to Redis → WebSocket clients
+        if new_signals:
+            import json
+            try:
+                from redis import Redis
+                r = Redis.from_url(settings.redis_url)
+                for payload in new_signals:
+                    r.publish("new_signal", json.dumps(payload))
+            except Exception as e:
+                logger.warning(f"Redis publish failed: {e}")
 
         logger.info(f"Post {post_id} processed: {len(objects)} objects, {len(saved_entities)} entities")
 

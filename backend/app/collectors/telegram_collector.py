@@ -58,8 +58,14 @@ class TelegramCollector(BaseCollector):
 
         channels = [c.strip() for c in settings.tg_channels.split(",") if c.strip()]
 
+        from telethon.sessions import StringSession
+        session = (
+            StringSession(settings.tg_session_string)
+            if settings.tg_session_string
+            else settings.tg_session_path
+        )
         client = TelegramClient(
-            settings.tg_session_path,
+            session,
             int(settings.tg_api_id),
             settings.tg_api_hash,
         )

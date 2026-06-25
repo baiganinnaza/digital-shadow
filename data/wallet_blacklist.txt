@@ -1,5 +1,12 @@
-bc1qcluster0000000000000000000000000000demo
-bc1qblack0000000000000000000000000000000bad
-bc1qM198QNV3E17H17MJ8KS1SPB5XB34ULSQJYDJTL
-bc1qUKP28A3849MCC79WML6Q6DYMJNTR82B97XVBMD
-0xe743849e63f8101ac616f8fd0ba84a167fe482ed
+# Wallet blacklist — known illicit addresses (public OSINT sources)
+# Format: one address per line, # for comments
+# Sources: OFAC SDN list, Chainalysis public reports, manual OSINT
+
+# TRON (TRC20) — добавляй адреса по мере обнаружения
+# TExampleTronAddress000000000000000000
+
+# ETH — добавляй адреса по мере обнаружения
+# 0x0000000000000000000000000000000000000000
+
+# BTC — добавляй адреса по мере обнаружения
+# 1ExampleBitcoinAddress000000000000

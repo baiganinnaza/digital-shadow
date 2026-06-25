@@ -14,6 +14,7 @@ from app.config import settings
 from app.collectors.seed import SeedCollector
 from app.collectors.telegram_collector import TelegramCollector
 from app.collectors.olx_collector import OlxCollector
+from app.collectors.blockchain_collector import BlockchainCollector
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -37,6 +38,7 @@ async def _collect():
     if settings.use_public_sources:
         collectors.append(TelegramCollector())
         collectors.append(OlxCollector())
+        collectors.append(BlockchainCollector())
 
     posts_data = []
     for collector in collectors:

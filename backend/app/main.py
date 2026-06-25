@@ -1,17 +1,64 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, desc, text
+from sqlalchemy import select, update, desc, text, func
 from pydantic import BaseModel
 from typing import Optional
+import asyncio
+import json
 import logging
 
 from app.db import engine, get_db, Base, get_neo4j_driver
 from app.models import RawPost, Entity, Object, RiskSignal, Case, Feedback
+from app.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# ── WebSocket manager ────────────────────────────────────────────────────────
+
+class WSManager:
+    def __init__(self):
+        self._clients: list[WebSocket] = []
+
+    async def connect(self, ws: WebSocket):
+        await ws.accept()
+        self._clients.append(ws)
+
+    def disconnect(self, ws: WebSocket):
+        if ws in self._clients:
+            self._clients.remove(ws)
+
+    async def broadcast(self, data: dict):
+        dead = []
+        for ws in self._clients:
+            try:
+                await ws.send_json(data)
+            except Exception:
+                dead.append(ws)
+        for ws in dead:
+            self.disconnect(ws)
+
+ws_manager = WSManager()
+
+
+async def _redis_relay():
+    """Listen to Redis pub/sub and relay new signals to WebSocket clients."""
+    try:
+        from redis.asyncio import Redis as ARedis
+        r = ARedis.from_url(settings.redis_url)
+        pubsub = r.pubsub()
+        await pubsub.subscribe("new_signal")
+        async for message in pubsub.listen():
+            if message["type"] == "message":
+                try:
+                    data = json.loads(message["data"])
+                    await ws_manager.broadcast(data)
+                except Exception:
+                    pass
+    except Exception as e:
+        logger.warning(f"Redis relay stopped: {e}")
 
 
 @asynccontextmanager
@@ -19,7 +66,9 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created/verified")
+    relay_task = asyncio.create_task(_redis_relay())
     yield
+    relay_task.cancel()
 
 
 app = FastAPI(title="Digital Shadow API", lifespan=lifespan)
@@ -242,3 +291,80 @@ async def create_feedback(body: FeedbackCreate, db: AsyncSession = Depends(get_d
         )
     await db.commit()
     return {"ok": True}
+
+
+# ── WebSocket ────────────────────────────────────────────────────────────────
+
+@app.websocket("/ws/signals")
+async def ws_signals(ws: WebSocket):
+    await ws_manager.connect(ws)
+    try:
+        while True:
+            await asyncio.sleep(30)
+    except WebSocketDisconnect:
+        ws_manager.disconnect(ws)
+
+
+# ── Map aggregation ──────────────────────────────────────────────────────────
+
+KZ_CITY_COORDS: dict[str, tuple[float, float]] = {
+    "алматы":           (43.238, 76.945),
+    "шымкент":          (42.317, 69.590),
+    "астана":           (51.180, 71.446),
+    "нур-султан":       (51.180, 71.446),
+    "тараз":            (42.900, 71.363),
+    "кызылорда":        (44.852, 65.509),
+    "актобе":           (50.280, 57.207),
+    "атырау":           (47.117, 51.920),
+    "актау":            (43.652, 51.157),
+    "усть-каменогорск": (49.948, 82.628),
+    "оскемен":          (49.948, 82.628),
+    "павлодар":         (52.287, 76.967),
+    "семей":            (50.411, 80.226),
+    "костанай":         (53.214, 63.625),
+    "петропавловск":    (54.865, 69.138),
+    "уральск":          (51.226, 51.380),
+    "талдыкорган":      (45.013, 78.374),
+    "кокшетау":         (53.285, 69.392),
+}
+
+
+@app.get("/api/signals/map")
+async def get_signals_map(db: AsyncSession = Depends(get_db)):
+    """Aggregated signal counts per KZ city for map.html globe."""
+    stmt = (
+        select(RiskSignal.score, RawPost.text)
+        .join(Object, RiskSignal.object_id == Object.id)
+        .join(Entity, Entity.value == Object.key)
+        .join(RawPost, Entity.post_id == RawPost.id)
+        .where(RiskSignal.status != "dismissed")
+        .limit(1000)
+    )
+    rows = (await db.execute(stmt)).all()
+
+    regions: dict[str, dict] = {}
+    for score, text in rows:
+        text_lower = (text or "").lower()
+        for city_key, (lat, lng) in KZ_CITY_COORDS.items():
+            if city_key in text_lower:
+                if city_key not in regions:
+                    regions[city_key] = {
+                        "name": city_key.capitalize(),
+                        "lat": lat, "lng": lng,
+                        "signals": 0, "max_score": 0.0, "risk": "low",
+                    }
+                r = regions[city_key]
+                r["signals"] += 1
+                if score > r["max_score"]:
+                    r["max_score"] = score
+                    r["risk"] = ("critical" if score >= 0.75 else
+                                 "high"     if score >= 0.50 else
+                                 "medium"   if score >= 0.30 else "low")
+                break
+
+    total_cases = (await db.execute(select(func.count(Case.id)))).scalar() or 0
+    return {
+        "regions":       list(regions.values()),
+        "total_signals": sum(r["signals"] for r in regions.values()),
+        "total_cases":   total_cases,
+    }

@@ -26,6 +26,12 @@ class Settings(BaseSettings):
     # OLX.kz
     olx_keywords: str = "вейп,жижа,испаритель,алкоголь оптом,дроп,курьер анон,нал доставка"
 
+    # Telegram — StringSession (run scripts/tg_auth.py once locally)
+    tg_session_string: str = ""
+
+    # Blockchain APIs
+    etherscan_api_key: str = ""   # optional, free at etherscan.io
+
     class Config:
         env_file = ".env"
         extra = "ignore"
