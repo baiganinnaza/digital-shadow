@@ -27,7 +27,7 @@ _PROMPT = """\
 - легальный: обычная законная торговля
 
 Отвечай СТРОГО в формате JSON, без пояснений вне JSON:
-{"category": "...", "risk": "critical|high|medium|low", "is_illegal": true|false, "confidence": 0.0-1.0, "reasoning": "кратко на русском"}
+{{"category": "...", "risk": "critical|high|medium|low", "is_illegal": true|false, "confidence": 0.0-1.0, "reasoning": "кратко на русском"}}
 
 Текст:
 {text}"""
